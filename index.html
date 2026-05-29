@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Hub — Trend Radar v3</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0f0f1a;--card:#1a1a2e;--card-hover:#242445;--accent:#6366f1;--accent2:#818cf8;
+--text:#e2e8f0;--text-dim:#94a3b8;--border:#2d2d4a;
+--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--pink:#ec4899;--cyan:#06b6d4;
+--pill-books:#a78bfa;--pill-streaming:#f472b6;--pill-cinema:#fb923c;--pill-vertical:#34d399;--pill-ai:#38bdf8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.5;min-height:100vh}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(15,15,26,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:1.15rem;font-weight:700;white-space:nowrap;background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar .subtitle{font-size:.72rem;color:var(--text-dim);white-space:nowrap}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+select,input[type=text]{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.82rem;outline:none}
+select:focus,input:focus{border-color:var(--accent)}
+input[type=text]{width:200px}
+.toggle-btn{background:var(--card);color:var(--text-dim);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:.78rem;cursor:pointer;transition:.2s;white-space:nowrap}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.timestamp{font-size:.68rem;color:var(--text-dim);white-space:nowrap}
+.container{max-width:1500px;margin:0 auto;padding:20px 24px 60px}
+.section-title{font-size:1.2rem;font-weight:700;margin:28px 0 14px;display:flex;align-items:center;gap:10px}
+.section-title .icon{font-size:1.3rem}
+.sub-title{font-size:.95rem;font-weight:600;color:var(--text-dim);margin:20px 0 10px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.card:hover{background:var(--card-hover);border-color:var(--accent);transform:translateY(-2px)}
+.card-title{font-size:.88rem;font-weight:600;line-height:1.3;margin-bottom:5px}
+.card-meta{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.pill{display:inline-block;padding:2px 7px;border-radius:20px;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.pill-books{background:rgba(167,139,250,.15);color:var(--pill-books)}
+.pill-streaming{background:rgba(244,114,182,.15);color:var(--pill-streaming)}
+.pill-cinema{background:rgba(251,146,60,.15);color:var(--pill-cinema)}
+.pill-vertical{background:rgba(52,211,153,.15);color:var(--pill-vertical)}
+.pill-ai{background:rgba(56,189,216,.15);color:var(--pill-ai)}
+.pill-trope{background:rgba(99,102,241,.12);color:var(--accent2)}
+.phase{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.6rem;font-weight:600}
+.phase-emerging{background:rgba(34,197,94,.15);color:var(--green)}
+.phase-rising{background:rgba(234,179,8,.15);color:var(--yellow)}
+.phase-peaking{background:rgba(249,115,22,.15);color:var(--orange)}
+.phase-saturating{background:rgba(239,68,68,.15);color:var(--red)}
+.card-desc{font-size:.76rem;color:var(--text-dim);margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-source{font-size:.64rem;color:var(--text-dim);opacity:.7}
+.card-stats{font-size:.72rem;color:var(--accent2);margin-top:3px}
+/* TROPE GROUP HEADERS */
+.trope-group{margin-bottom:24px}
+.trope-group-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 14px;background:rgba(99,102,241,.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+.trope-group-header h3{font-size:.95rem;font-weight:700;color:var(--text)}
+.trope-group-header .count{font-size:.72rem;color:var(--text-dim);background:var(--card);padding:2px 8px;border-radius:12px}
+.comp-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table.comp-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.comp-table th{background:var(--card);padding:8px 10px;text-align:left;font-weight:600;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap}
+.comp-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.comp-table tr:hover td{background:var(--card-hover)}
+.comp-table .hl{color:var(--accent2);font-weight:600}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.chart-card h3{font-size:.82rem;font-weight:600;margin-bottom:10px;color:var(--text-dim)}
+.chart-card.full{grid-column:1/-1}
+canvas{max-height:300px}
+.opp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.opp-card:hover{border-color:var(--accent);background:var(--card-hover)}
+.opp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.opp-title{font-size:.95rem;font-weight:700}
+.opp-score{font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px}
+.opp-score.high{background:rgba(34,197,94,.15);color:var(--green)}
+.opp-score.medium{background:rgba(234,179,8,.15);color:var(--yellow)}
+.opp-score.low{background:rgba(239,68,68,.15);color:var(--red)}
+.opp-desc{font-size:.8rem;color:var(--text-dim);margin-bottom:5px}
+.opp-pills{display:flex;gap:4px;flex-wrap:wrap}
+.opp-evidence{font-size:.74rem;color:var(--text-dim);margin-top:5px;padding-top:5px;border-top:1px solid var(--border)}
+.heatmap-wrap{overflow-x:auto}
+table.heatmap{border-collapse:collapse;width:100%;font-size:.76rem}
+.heatmap th{padding:7px 9px;text-align:left;color:var(--text-dim);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+.heatmap td{padding:5px 9px;text-align:center;border-bottom:1px solid rgba(45,45,74,.5);min-width:70px}
+.heatmap td.tn{text-align:left;font-weight:500;color:var(--text);white-space:nowrap}
+.heat-0{background:rgba(255,255,255,.02);color:#555}
+.heat-1{background:rgba(99,102,241,.08);color:#818cf8}
+.heat-2{background:rgba(99,102,241,.18);color:#a5b4fc}
+.heat-3{background:rgba(99,102,241,.3);color:#c7d2fe}
+.heat-4{background:rgba(99,102,241,.45);color:#e0e7ff}
+.heat-5{background:rgba(99,102,241,.65);color:#fff}
+.pitch-card{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1px solid var(--accent);border-radius:14px;padding:20px;margin-bottom:12px}
+.pitch-rank{font-size:1.7rem;font-weight:800;color:var(--accent);float:left;margin-right:14px;line-height:1}
+.pitch-title{font-size:1rem;font-weight:700;margin-bottom:3px}
+.pitch-why{font-size:.8rem;color:var(--text-dim);margin-bottom:6px}
+.pitch-data{font-size:.73rem;color:var(--accent2)}
+.gap-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);margin-top:10px}
+table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
+.gap-table th{background:var(--card);padding:7px 10px;text-align:center;font-weight:600;color:var(--text-dim);border-bottom:1px solid var(--border)}
+.gap-table th:first-child{text-align:left}
+.gap-table td{padding:6px 10px;border-bottom:1px solid var(--border);text-align:center}
+.gap-table td:first-child{text-align:left;font-weight:500}
+.gap-table .yes{color:var(--green)}.gap-table .no{color:var(--red)}.gap-table .weak{color:var(--yellow)}
+.tab-bar{display:flex;gap:2px;margin-bottom:18px;background:var(--card);border-radius:10px;padding:4px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap}
+.tab-btn{padding:7px 16px;border:none;background:transparent;color:var(--text-dim);font-size:.78rem;border-radius:8px;cursor:pointer;font-weight:500;transition:.2s;white-space:nowrap}
+.tab-btn.active{background:var(--accent);color:#fff}
+.tab-content{display:none}.tab-content.active{display:block}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:16px;max-width:720px;width:100%;padding:26px;position:relative;max-height:85vh;overflow-y:auto}
+.modal-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer}
+.modal-close:hover{color:var(--text)}
+.modal h2{font-size:1.1rem;font-weight:700;margin-bottom:6px;padding-right:36px}
+.modal .modal-pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.modal .ds{margin-bottom:12px}
+.modal .ds h4{font-size:.8rem;font-weight:600;color:var(--accent2);margin-bottom:3px}
+.modal .ds p,.modal .ds li{font-size:.8rem;color:var(--text-dim);line-height:1.5}
+.modal .ds ul{padding-left:14px}
+.ct-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:10px}
+.ct-card{background:rgba(99,102,241,.05);border:1px solid var(--border);border-radius:10px;padding:11px}
+.ct-card h4{font-size:.8rem;font-weight:600;color:var(--accent2);margin-bottom:6px}
+.ct-item{font-size:.73rem;color:var(--text-dim);padding:2px 0;border-bottom:1px solid rgba(45,45,74,.3)}
+.ct-item:last-child{border:none}
+@media(max-width:1100px){.charts-row-3{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.topbar{padding:10px 14px}.controls{margin-left:0;width:100%}input[type=text]{width:100%}.cards-grid{grid-template-columns:1fr}.charts-row,.charts-row-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><h1>Content Intelligence Hub</h1><div class="subtitle">Trend Radar v3 | HolyWater / MyDrama / MyMuse</div></div>
+  <div class="controls">
+    <select id="marketFilter"><option value="all">Всі ринки</option><option value="books">Books</option><option value="streaming">Streaming</option><option value="cinema">Cinema</option><option value="vertical">Vertical Series</option></select>
+    <select id="tropeFilter"><option value="all">Всі тропи</option></select>
+    <input type="text" id="searchInput" placeholder="Пошук...">
+    <button class="toggle-btn" id="prePeakToggle">Pre-Peak</button>
+    <span class="timestamp">Оновлено: 29 травня 2026</span>
+  </div>
+</div>
+<div class="container">
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Огляд трендів</button>
+  <button class="tab-btn" data-tab="competitors">Конкуренти</button>
+  <button class="tab-btn" data-tab="tropes">Тропи & Аналітика</button>
+  <button class="tab-btn" data-tab="pitch">Що пітчити?</button>
+  <button class="tab-btn" data-tab="charts">Графіки</button>
+</div>
+<!-- TAB: OVERVIEW — grouped by tropes -->
+<div class="tab-content active" id="tab-overview">
+  <h2 class="section-title"><span class="icon">&#x1F4CA;</span> Огляд трендів <span style="font-size:.7rem;font-weight:400;color:var(--text-dim);margin-left:8px" id="trendCount"></span></h2>
+  <div id="tropeGroupsContainer"></div>
+</div>
+<!-- TAB: COMPETITORS -->
+<div class="tab-content" id="tab-competitors">
+  <h2 class="section-title"><span class="icon">&#x1F3AF;</span> Competitor Tracker</h2>
+  <div class="comp-table-wrap"><table class="comp-table"><thead><tr><th>Платформа</th><th>Дохід</th><th>MAU</th><th>Каталог</th><th>Бюджет/серіал</th><th>Аудиторія</th><th>Ключові факти</th><th>Джерело</th></tr></thead><tbody id="compBody"></tbody></table></div>
+  <h3 class="sub-title">Індустрія загалом</h3>
+  <div class="cards-grid" id="industryCards"></div>
+  <h3 class="sub-title" style="margin-top:24px">Trending контент по платформах (травень 2026)</h3>
+  <div class="ct-wrap" id="compTrending"></div>
+  <h3 class="sub-title" style="margin-top:24px">Жанровий мікс конкурентів</h3>
+  <div class="charts-row-3" id="compDonutRow">
+    <div class="chart-card"><h3>DramaBox</h3><canvas id="donutDramabox"></canvas></div>
+    <div class="chart-card"><h3>ReelShort</h3><canvas id="donutReelshort"></canvas></div>
+    <div class="chart-card"><h3>GoodShort</h3><canvas id="donutGoodshort"></canvas></div>
+    <div class="chart-card"><h3>NetShort</h3><canvas id="donutNetshort"></canvas></div>
+  </div>
+</div>
+<!-- TAB: TROPES -->
+<div class="tab-content" id="tab-tropes">
+  <h2 class="section-title"><span class="icon">&#x1F525;</span> Тропи & Крос-ринкова аналітика</h2>
+  <div class="chart-card full" style="margin-bottom:16px"><h3>Heatmap: присутність тропів по ринках (0=відсутній, 5=домінує)</h3><div class="heatmap-wrap" id="heatmapWrap"></div></div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>Топ-15 тропів у вертикальних серіалах</h3><canvas id="tropesBarChart"></canvas></div>
+    <div class="chart-card"><h3>Opportunity Bubble: де найбільший геп?</h3><canvas id="bubbleChart"></canvas></div>
+  </div>
+  <div class="chart-card full" style="margin-bottom:16px"><h3>Saturation Index — насиченість тропів у вертикальних серіалах</h3><canvas id="saturationChart" style="max-height:240px"></canvas></div>
+</div>
+<!-- TAB: PITCH -->
+<div class="tab-content" id="tab-pitch">
+  <h2 class="section-title"><span class="icon">&#x1F4A1;</span> Що пітчити наступним?</h2>
+  <p style="color:var(--text-dim);font-size:.83rem;margin-bottom:16px">Рекомендації: де попит у книгах/стримінгу високий, а пропозиція у вертикальних серіалах низька.</p>
+  <div id="pitchCards"></div>
+  <h3 class="sub-title" style="margin-top:28px">Competitor Content Gap Analysis</h3>
+  <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:8px">Які тропи є у конкурентів, а яких бракує.</p>
+  <div class="gap-table-wrap" id="gapTableWrap"></div>
+  <h3 class="sub-title" style="margin-top:28px">Крос-ринкові можливості</h3>
+  <div id="oppCards"></div>
+</div>
+<!-- TAB: CHARTS -->
+<div class="tab-content" id="tab-charts">
+  <h2 class="section-title"><span class="icon">&#x1F4C8;</span> Графіки & Дані</h2>
+  <div class="charts-row">
+    <div class="chart-card"><h3>Netflix Global Top 10 — views/week (M)</h3><canvas id="netflixChart"></canvas></div>
+    <div class="chart-card"><h3>ReelShort Top 10 — IMDb</h3><canvas id="reelshortChart"></canvas></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>GoodShort Trending — views (K)</h3><canvas id="goodshortChart"></canvas></div>
+    <div class="chart-card"><h3>Платформи за каталогом</h3><canvas id="platformsChart"></canvas></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>Дохід платформ ($M)</h3><canvas id="revenueChart"></canvas></div>
+    <div class="chart-card"><h3>Amazon Kindle Top 20 Romance (квітень 2026)</h3><canvas id="amazonChart"></canvas></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>Goodreads — ratings (M)</h3><canvas id="booksChart"></canvas></div>
+    <div class="chart-card"><h3>NetShort Trending — жанри</h3><canvas id="netshortGenreChart"></canvas></div>
+  </div>
+</div>
+</div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+<script>
+// ===== TROPE GROUP DEFINITIONS =====
+const tropeGroups = [
+  {id:'revenge',label:'Revenge & Empowerment',icon:'⚔️',match:['Revenge','Strong Female Lead','Counterattack','Karma Payback','Female Empowerment','Underdog Rise']},
+  {id:'darkrom',label:'Dark Romance & Mafia',icon:'🖤',match:['Dark Romance','Mafia','Toxic Love','Toxic Relationship']},
+  {id:'romantasy',label:'Fantasy & Romantasy',icon:'🐉',match:['Fantasy','Romantasy','Fantasy Romance','Supernatural','Werewolf','Dragons']},
+  {id:'thriller',label:'Thriller & True Crime',icon:'🔪',match:['Thriller','True Crime','Mystery']},
+  {id:'sweetrom',label:'Romance (Sweet & Classic)',icon:'💕',match:['Romance','Sweet Love','Second Chance','Marriage','Contract Marriage','Arranged Marriage','Fake Dating']},
+  {id:'ceo',label:'CEO & Billionaire',icon:'💰',match:['CEO','Billionaire','Hidden Identity','Heiress']},
+  {id:'family',label:'Family & Drama',icon:'👨‍👩‍👧',match:['Family','Drama','Period Drama']},
+  {id:'enemies',label:'Enemies to Lovers & Forbidden',icon:'🔥',match:['Enemies to Lovers','Forbidden Love','Age Gap','LGBTQ']},
+  {id:'action',label:'Action, Sci-Fi & Sports',icon:'💥',match:['Action','Sci-Fi','Sports','Military','Franchise','Comedy','Fashion','Book Adaptation','Literary Adaptation']},
+];
+
+// ===== ALL TRENDS =====
+const trends = [
+  // DRAMABOX TRENDING (3 pages, dramaboxdb.com)
+  {id:'db1',title:"Think Again! I'm the Hidden Boss Mom",market:'vertical',phase:'peaking',desc:'52 ep | Revenge, SFL, CEO. #1 DramaBox.',tags:['Revenge','Strong Female Lead','CEO'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#1 DramaBox'},
+  {id:'db2',title:'Addicted to Your Kiss',market:'vertical',phase:'peaking',desc:'65 ep | Romance. #2 DramaBox.',tags:['Romance'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#2 DramaBox'},
+  {id:'db3',title:'Fake Dating My Rich Nemesis',market:'vertical',phase:'peaking',desc:'62 ep | Fake Dating. #3 DramaBox.',tags:['Romance','Fake Dating'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#3 DramaBox'},
+  {id:'db4',title:"Watch Out, I'm The Lady Boss",market:'vertical',phase:'peaking',desc:'64 ep | Revenge, SFL. #4 DramaBox.',tags:['Revenge','Strong Female Lead'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#4 DramaBox'},
+  {id:'db5',title:"Pucked by My Brother's Rival",market:'vertical',phase:'rising',desc:'51 ep | Enemies to Lovers. #5 DramaBox.',tags:['Romance','Enemies to Lovers'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#5 DramaBox'},
+  {id:'db6',title:'Forever Was a Lie',market:'vertical',phase:'rising',desc:'50 ep | CEO. #6 DramaBox.',tags:['CEO'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#6 DramaBox'},
+  {id:'db7',title:'Queen Mom Rules',market:'vertical',phase:'peaking',desc:'63 ep | Family, SFL, CEO. Dual trending.',tags:['Family','Strong Female Lead','CEO'],source:'dramaboxdb.com + microdramaradar.com',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'Dual trending'},
+  {id:'db8',title:'Divorced, Now a Lycan Princess',market:'vertical',phase:'rising',desc:'67 ep | Werewolf, Hidden Identity.',tags:['Werewolf','Hidden Identity','Strong Female Lead'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'#9 DramaBox'},
+  {id:'db9',title:'Tied to My Dangerous Mafia Husband',market:'vertical',phase:'rising',desc:'67 ep | Mafia romance.',tags:['Romance','Mafia'],source:'dramaboxdb.com/trending',sourceUrl:'https://dramaboxdb.com/channel/trending',stats:'DramaBox trending'},
+  {id:'db10',title:'After Divorce: I Become Heiress',market:'vertical',phase:'rising',desc:'Revenge, CEO. DramaBox p2.',tags:['Revenge','CEO'],source:'dramaboxdb.com/trending/2',sourceUrl:'https://dramaboxdb.com/channel/trending/2',stats:'DramaBox p2'},
+  {id:'db11',title:'Dark Web of Desire',market:'vertical',phase:'rising',desc:'Toxic, Love Triangle. DramaBox p3.',tags:['Romance','Toxic Love'],source:'dramaboxdb.com/trending/3',sourceUrl:'https://dramaboxdb.com/channel/trending/3',stats:'DramaBox p3'},
+  {id:'db12',title:"Forget Me Not: Omega's Return",market:'vertical',phase:'emerging',desc:'Werewolf, Rebirth. DramaBox p3.',tags:['Werewolf','Sweet Love'],source:'dramaboxdb.com/trending/3',sourceUrl:'https://dramaboxdb.com/channel/trending/3',stats:'DramaBox p3'},
+  // GOODSHORT (goodshort.com, with real view counts)
+  {id:'gs1',title:'Blood and Bones of the Disowned Daughter',market:'vertical',phase:'peaking',desc:'64 ep | Family, Heiress. 33.5M views — GoodShort mega-hit.',tags:['Family','Heiress','Revenge'],source:'goodshort.com/Most-Trending',sourceUrl:'https://goodshort.com/channel/Most-Trending',stats:'33.5M views'},
+  {id:'gs2',title:'Kidnapped by the Mafia',market:'vertical',phase:'peaking',desc:'87 ep | Mafia, Contract Marriage. 15.2M views.',tags:['Mafia','Contract Marriage'],source:'goodshort.com/Most-Trending',sourceUrl:'https://goodshort.com/channel/Most-Trending',stats:'15.2M views'},
+  {id:'gs3',title:'Found A Homeless Genius',market:'vertical',phase:'rising',desc:'59 ep | Revenge, Underdog Rise, CEO. 3.3M views.',tags:['Revenge','Underdog Rise','CEO'],source:'goodshort.com/Most-Trending',sourceUrl:'https://goodshort.com/channel/Most-Trending',stats:'3.3M views'},
+  {id:'gs4',title:'Found My Daddy at the Construction Site',market:'vertical',phase:'rising',desc:'60 ep | Family, Secret Identity. 2.3M views.',tags:['Family','Contract Marriage'],source:'goodshort.com/Most-Trending',sourceUrl:'https://goodshort.com/channel/Most-Trending',stats:'2.3M views'},
+  {id:'gs5',title:'Too Late, My Alpha',market:'vertical',phase:'rising',desc:'47 ep | Werewolf, Toxic Love. 692K views.',tags:['Werewolf','Toxic Love'],source:'goodshort.com/Most-Trending',sourceUrl:'https://goodshort.com/channel/Most-Trending',stats:'692K views'},
+  // REELSHORT (filmora + reelshort.com)
+  {id:'rs1',title:'Married for Greencard, Stayed for Love',market:'vertical',phase:'peaking',desc:'IMDb 9.3 | 58 ep. #1 rated ReelShort.',tags:['Romance','Marriage'],source:'filmora.wondershare.com',sourceUrl:'https://filmora.wondershare.com/short-drama/reelshort-movies-list.html',stats:'IMDb 9.3'},
+  {id:'rs2',title:'Bound by Vendetta',market:'vertical',phase:'peaking',desc:'IMDb 9.1 | 66 ep. Dark romance.',tags:['Dark Romance','Revenge'],source:'filmora.wondershare.com',sourceUrl:'https://filmora.wondershare.com/short-drama/reelshort-movies-list.html',stats:'IMDb 9.1'},
+  {id:'rs3',title:'The Double Life of My Billionaire Husband',market:'vertical',phase:'peaking',desc:'IMDb 6.1 | 500M+ views. ReelShort mega-hit.',tags:['Billionaire','Hidden Identity'],source:'filmora.wondershare.com',sourceUrl:'https://filmora.wondershare.com/short-drama/reelshort-movies-list.html',stats:'500M+ views'},
+  {id:'rs4',title:'Curse of the Dragon King',market:'vertical',phase:'rising',desc:'IMDb 8.8 | 70 ep. Romantasy crossover!',tags:['Fantasy Romance','Romantasy'],source:'filmora.wondershare.com',sourceUrl:'https://filmora.wondershare.com/short-drama/reelshort-movies-list.html',stats:'IMDb 8.8'},
+  {id:'rs5',title:'The Warlord Returns',market:'vertical',phase:'emerging',desc:'ReelShort New Release. Male lead, Action.',tags:['Action','Revenge'],source:'reelshort.com',sourceUrl:'https://reelshort.com',stats:'New Release'},
+  {id:'rs6',title:'Resisting Mr. Lloyd: Age Gap Romance',market:'vertical',phase:'rising',desc:'ReelShort featured. Age Gap trope.',tags:['Age Gap','Hidden Identity'],source:'reelshort.com',sourceUrl:'https://reelshort.com',stats:'Featured'},
+  // NETSHORT (netshort.com, 97M downloads)
+  {id:'ns1',title:'False Weakling, True Power',market:'vertical',phase:'peaking',desc:'#1 NetShort Trending. Revenge, Karma Payback.',tags:['Revenge','Karma Payback'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'#1 NetShort'},
+  {id:'ns2',title:'Bankrupt My Cheating Husband',market:'vertical',phase:'peaking',desc:'#2 NetShort. Modern Romance, Karma.',tags:['Romance','Revenge'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'#2 NetShort'},
+  {id:'ns3',title:'Cry For Losing Me',market:'vertical',phase:'rising',desc:'#3 NetShort. Female Empowerment.',tags:['Strong Female Lead','Revenge'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'#3 NetShort'},
+  {id:'ns4',title:'The Wolfless Carpenter Rules the World',market:'vertical',phase:'rising',desc:'NetShort trending. Underdog Rise.',tags:['Underdog Rise','Revenge'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'NetShort trending'},
+  {id:'ns5',title:"The Lion's Captive",market:'vertical',phase:'rising',desc:'NetShort trending. Fantasy Romance.',tags:['Fantasy Romance'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'NetShort trending'},
+  {id:'ns6',title:'The Daughter Who Commands Dragon',market:'vertical',phase:'emerging',desc:'NetShort trending. Female Empowerment, Fantasy.',tags:['Strong Female Lead','Fantasy'],source:'netshort.com',sourceUrl:'https://netshort.com',stats:'NetShort trending'},
+  // MICRODRAMA RADAR
+  {id:'mdr1',title:"The Crown Prince's Bride",market:'vertical',phase:'emerging',desc:'Rising this week. Royalty + Fantasy.',tags:['Romance','Fantasy'],source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',stats:'Rising this week'},
+  {id:'mdr2',title:'Revenge of XXL Wife',market:'vertical',phase:'rising',desc:'MDR trending. Body-positive revenge.',tags:['Revenge','Strong Female Lead'],source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',stats:'MDR trending'},
+  {id:'mdr3',title:'Alpha Queen Rising',market:'vertical',phase:'rising',desc:'MDR trending. Werewolf + SFL.',tags:['Werewolf','Strong Female Lead'],source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',stats:'MDR trending'},
+  // NETFLIX (netflix.com/tudum/top10)
+  {id:'nf1',title:'Man on Fire: Season 1',market:'streaming',phase:'peaking',desc:'#1 Netflix Global. 11M views/week.',tags:['Action','Thriller'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'11M views/week'},
+  {id:'nf2',title:'Should I Marry A Murderer?',market:'streaming',phase:'peaking',desc:'#2 Netflix Global. 10.6M views/week. True crime/thriller.',tags:['True Crime','Thriller','Romance'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'10.6M views/week'},
+  {id:'nf3',title:'Running Point: Season 2',market:'streaming',phase:'rising',desc:'#4 Netflix. 6.7M views/week. Sports drama.',tags:['Drama','Sports'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'6.7M views/week'},
+  {id:'nf4',title:'Bridgerton (new season)',market:'streaming',phase:'peaking',desc:'Netflix franchise. Romance/period.',tags:['Romance','Period Drama'],source:'netflix.com',sourceUrl:'https://www.netflix.com',stats:'Franchise hit'},
+  {id:'nf5',title:'Heated Rivalry (HBO)',market:'streaming',phase:'emerging',desc:'HBO. Sports romance book adaptation.',tags:['Romance','Sports','Book Adaptation'],source:'hbo.com',sourceUrl:'https://www.hbo.com',stats:'Book-to-screen'},
+  {id:'nf6',title:'A Knight of Seven Kingdoms (HBO)',market:'streaming',phase:'rising',desc:'HBO. GoT universe fantasy.',tags:['Fantasy','Period Drama'],source:'hbo.com',sourceUrl:'https://www.hbo.com',stats:'GoT franchise'},
+  // CINEMA (boxofficemojo.com)
+  {id:'ci1',title:'Avatar: Fire and Ash',market:'cinema',phase:'peaking',desc:'#1 Box Office 2026.',tags:['Sci-Fi','Fantasy','Franchise'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#1 Box Office'},
+  {id:'ci2',title:'Wuthering Heights',market:'cinema',phase:'rising',desc:'#2 Box Office 2026. Literary adaptation.',tags:['Romance','Literary Adaptation','Period Drama'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#2 Box Office'},
+  {id:'ci3',title:'Project Hail Mary',market:'cinema',phase:'rising',desc:'#4 Box Office. Book adaptation.',tags:['Sci-Fi','Book Adaptation'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#4 Box Office'},
+  {id:'ci4',title:'Devil Wears Prada 2',market:'cinema',phase:'rising',desc:'#7 Box Office.',tags:['Comedy','Drama','Fashion'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#7 Box Office'},
+  // BOOKS — GOODREADS
+  {id:'bk1',title:'Haunting Adeline (H.D. Carlton)',market:'books',phase:'peaking',desc:'931K Goodreads ratings. Dark romance phenomenon.',tags:['Dark Romance','Thriller'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com/book/show/58329670',stats:'931K ratings'},
+  {id:'bk2',title:'A Court of Thorns and Roses (Maas)',market:'books',phase:'peaking',desc:'4.4M Goodreads ratings. Romantasy defining title.',tags:['Romantasy','Enemies to Lovers'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com/book/show/50659467',stats:'4.4M ratings'},
+  {id:'bk3',title:'Fourth Wing (Yarros)',market:'books',phase:'peaking',desc:'3.7M ratings. Dragon riders + romance.',tags:['Romantasy','Fantasy Romance','Dragons'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com/book/show/61431922',stats:'3.7M ratings'},
+  {id:'bk4',title:'Twisted Love (Ana Huang)',market:'books',phase:'peaking',desc:'1.66M ratings. Billionaire dark romance.',tags:['Dark Romance','Billionaire','Enemies to Lovers'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com/book/show/59803207',stats:'1.66M ratings'},
+  {id:'bk5',title:'The Housemaid (McFadden)',market:'books',phase:'peaking',desc:'3.5M ratings. Domestic thriller.',tags:['Thriller','Mystery','Revenge'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com/book/show/62848514',stats:'3.5M ratings'},
+  {id:'bk6',title:'The Love Hypothesis (Hazelwood)',market:'books',phase:'peaking',desc:'Fake dating in STEM. BookTok hit.',tags:['Romance','Fake Dating'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'BookTok trending'},
+  {id:'bk7',title:'Den of Vipers (K.A. Knight)',market:'books',phase:'rising',desc:'Dark romance / mafia.',tags:['Dark Romance','Mafia'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'Dark romance shelf'},
+  {id:'bk8',title:'Verity (Colleen Hoover)',market:'books',phase:'rising',desc:'Thriller + dark romance.',tags:['Thriller','Dark Romance'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'Trending'},
+  // BOOKS — AMAZON KINDLE TOP 20 (April 2026, romancingthedata.com)
+  {id:'az1',title:'Rites of the Starling (Devney Perry)',market:'books',phase:'peaking',desc:'#1 Amazon Kindle Romance, April 2026. NEW entry.',tags:['Romance'],source:'Amazon Kindle Top 100 (romancingthedata.com)',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#1 Kindle Romance Apr 2026'},
+  {id:'az2',title:'The Deal (Elle Kennedy)',market:'books',phase:'peaking',desc:'#2 Amazon Kindle Romance. Sports romance classic.',tags:['Romance','Sports'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#2 Kindle Romance'},
+  {id:'az3',title:'Twisted Pawn (L.J. Shen)',market:'books',phase:'peaking',desc:'#3 Amazon Kindle Romance. NEW entry. Dark romance.',tags:['Dark Romance'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#3 Kindle Romance'},
+  {id:'az4',title:'ACOTAR 6 & 7 Pre-orders (S.J. Maas)',market:'books',phase:'peaking',desc:'#4 & #5 Amazon Kindle. Pre-orders still in Top 5!',tags:['Romantasy','Enemies to Lovers'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#4-5 Kindle (pre-orders!)'},
+  {id:'az5',title:'In Her Own League (Liz Tomforde)',market:'books',phase:'rising',desc:'#8 Amazon Kindle. Sports romance rising.',tags:['Romance','Sports'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#8 Kindle Romance'},
+  {id:'az6',title:'The Ruler (Penelope Sky)',market:'books',phase:'rising',desc:'#12 Amazon Kindle. NEW entry. Dark romance.',tags:['Dark Romance','Mafia'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#12 Kindle Romance'},
+  {id:'az7',title:'The Last Letter (Rebecca Yarros)',market:'books',phase:'peaking',desc:'#13 Amazon Kindle. Fourth Wing author.',tags:['Romance'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#13 Kindle Romance'},
+  {id:'az8',title:'My Dreadful Darling (H.D. Carlton)',market:'books',phase:'rising',desc:'#19 Amazon Kindle. NEW. Haunting Adeline author!',tags:['Dark Romance','Thriller'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#19 Kindle Romance (NEW)'},
+  {id:'az9',title:'When the Moon Hatched (S.A. Parker)',market:'books',phase:'rising',desc:'Amazon Romantasy bestseller. Moonfall Series.',tags:['Romantasy'],source:'amazon.com/Best-Sellers-Romantasy',sourceUrl:'https://www.amazon.com/Best-Sellers-Romantasy-eBooks/zgbs/digital-text/158569011',stats:'Kindle Romantasy bestseller'},
+  {id:'az10',title:'Game On (Navessa Allen)',market:'books',phase:'rising',desc:'#11 Amazon Kindle. NEW. Sports romance.',tags:['Romance','Sports'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#11 Kindle Romance (NEW)'},
+];
+
+const competitors = [
+  {name:'ReelShort',revenue:'$1.2B (2025)',mau:'50M',catalog:'2,752',budget:'$150K-$250K',audience:'75% female',facts:'200+ originals, targeting 400 in 2026. Buy-out model.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:1200},
+  {name:'DramaBox',revenue:'$323M (2024)',mau:'50M',catalog:'3,496',budget:'N/A',audience:'43.5% M / 56.5% F',facts:'$10M profit 2024. Disney Accelerator 2025.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:323},
+  {name:'NetShort',revenue:'~$227M/yr (est.)',mau:'97M downloads',catalog:'N/A',budget:'N/A',audience:'Male-skewed',facts:'$18.9M/month revenue (mid-2025). 97M downloads. #3 by revenue. NETSTORY PTE Singapore. Heavy dubbed Chinese content. Karma Payback / Underdog Rise dominant.',source:'sensortower.com, medium.com/real-reel',sourceUrl:'https://medium.com/real-reel/netshort-app-2025-deep-dive-c68b01e68d36',revNum:227},
+  {name:'ShortMax',revenue:'3,888% YoY',mau:'30M+',catalog:'N/A',budget:'N/A',audience:'N/A',facts:'Fastest-growing. TikTok PineDrama supplier.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:200},
+  {name:'GoodShort',revenue:'~$220M',mau:'N/A',catalog:'1,961',budget:'$160K-$200K',audience:'N/A',facts:'7-10 days shooting/series.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:220},
+  {name:'MyDrama (HolyWater)',revenue:'$22M Round',mau:'N/A',catalog:'200+',budget:'N/A',audience:'N/A',facts:'Fox $50M+ equity. 200+ series commitment.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:50,hl:true},
+  {name:'ShortTV',revenue:'N/A',mau:'N/A',catalog:'2,989',budget:'N/A',audience:'N/A',facts:'2nd largest catalog.',source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',revNum:0},
+  {name:'GammaTime',revenue:'$14M seed',mau:'N/A',catalog:'N/A',budget:'N/A',audience:'N/A',facts:'Kim Kardashian + Alexis Ohanian investors.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/',revNum:14},
+];
+const industryFacts = [
+  {title:'IAP дохід 2025',value:'$2.98B',detail:'+115% YoY across all platforms.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/'},
+  {title:'SAG-AFTRA ставки',value:'$250/день (лід)',detail:'$164/day support. Verticals Agreement.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/'},
+  {title:'Маркетинг',value:'~90% бюджету',detail:'$20-30 per install.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/'},
+  {title:'NetShort зростання',value:'+171% QoQ (Q1 2025)',detail:'Найшвидше зростання серед топ-5.',source:'sensortower.com, insightrackr.com',sourceUrl:'https://blog.insightrackr.com/en/docs/Apr25TopShortDrama'},
+];
+const compTrendingData = {
+  'DramaBox':{source:'dramaboxdb.com, 3 pages',items:["Think Again! I'm the Hidden Boss Mom (Revenge, CEO)","Addicted to Your Kiss (Romance)","Fake Dating My Rich Nemesis (Fake Dating)","Watch Out, I'm The Lady Boss (Revenge, SFL)","Pucked by My Brother's Rival (EtL)","Queen Mom Rules (Family, CEO)","Dark Web of Desire (Toxic, Love Triangle)","Profit Prophecy (Fantasy, Underdog)","Ark on Time (Revenge, Rebirth)"]},
+  'ReelShort':{source:'reelshort.com homepage',items:["Bound by Love (Mafia) — New","Stableboy (YA, LGBTQ) — New","The Warlord Returns (Action) — New","You Divorced a Genius Heiress (Hidden Identity)","Baby Trapped by the Billionaire (Pregnancy)","The Pack's Doctor (Werewolf)","Shhh, Professor! (Age Gap, Forbidden)","The Genius and the Bad Boy (Interactive)"]},
+  'GoodShort':{source:'goodshort.com/Most-Trending',items:["Blood and Bones... (Family) — 33.5M views","Kidnapped by the Mafia — 15.2M views","Found A Homeless Genius (CEO) — 3.3M views","Found My Daddy... (Family) — 2.3M views","Weeping Bones (Heiress) — 1.6M views","Too Late, My Alpha (Werewolf) — 692K views"]},
+  'NetShort':{source:'netshort.com homepage, May 2026',items:["False Weakling, True Power (Revenge, Karma) — #1","Bankrupt My Cheating Husband (Romance, Karma) — #2","Cry For Losing Me (Female Empowerment) — #3","The Wolfless Carpenter (Underdog Rise) — #4","THE JANITOR: Rise of The Prime (Sci-Fi) — #5","The Lion's Captive (Fantasy Romance)","The Slap Queen (Romance, Revenge)","Caged by the Mafia Boss (Mafia)","A Werewolf Song of Fire and Frost (Werewolf)"]}
+};
+
+const tropeHeatmap = [
+  {trope:'Romance / Love Story',verticals:5,books:5,streaming:3,cinema:2,vCount:96,note:'MDR: 96 tagged. Amazon Kindle: 8 of Top 20'},
+  {trope:'Revenge / Counterattack',verticals:5,books:3,streaming:2,cinema:1,vCount:76,note:'MDR: 46+30. NetShort #1 trope ("Karma Payback")'},
+  {trope:'Strong Female Lead',verticals:4,books:4,streaming:3,cinema:3,vCount:36,note:'MDR: 36. Books: Maas, Hoover, Yarros'},
+  {trope:'CEO / Billionaire',verticals:5,books:3,streaming:1,cinema:1,vCount:53,note:'MDR: CEO 33 + Billionaire 20'},
+  {trope:'Family / Family Bonds',verticals:4,books:2,streaming:2,cinema:2,vCount:49,note:'MDR: 49. GoodShort mega-hit 33.5M views'},
+  {trope:'Hidden Identity',verticals:4,books:2,streaming:1,cinema:1,vCount:33,note:'MDR: 33. RS dedicated shelf'},
+  {trope:'Second Chance',verticals:3,books:2,streaming:1,cinema:1,vCount:30,note:'MDR: 30 titles'},
+  {trope:'Love Triangle',verticals:3,books:2,streaming:2,cinema:2,vCount:25,note:'MDR: 25'},
+  {trope:'Werewolf / Supernatural',verticals:3,books:3,streaming:2,cinema:1,vCount:22,note:'MDR: 22. RS 10+. NetShort has werewolf titles'},
+  {trope:'Enemies to Lovers',verticals:2,books:5,streaming:2,cinema:1,vCount:18,note:'MDR: 18. ACOTAR 4.4M + Twisted Love 1.66M'},
+  {trope:'Mafia / Crime',verticals:2,books:3,streaming:1,cinema:1,vCount:12,note:'DB, GS 15.2M views, NetShort. Books: Den of Vipers'},
+  {trope:'Dark Romance',verticals:1,books:5,streaming:1,cinema:0,vCount:5,note:'Amazon Kindle: 3 of Top 20 are dark romance. Verticals: 1-2 titles'},
+  {trope:'Romantasy / Fantasy Romance',verticals:1,books:5,streaming:3,cinema:2,vCount:3,note:'ACOTAR 6&7 pre-orders #4-5 Kindle! Fourth Wing 3.7M'},
+  {trope:'Fake Dating',verticals:1,books:4,streaming:1,cinema:1,vCount:5,note:'Love Hypothesis. DB #3 Fake Dating My Rich Nemesis'},
+  {trope:'Thriller / True Crime',verticals:0,books:5,streaming:5,cinema:3,vCount:2,note:'Netflix #2 10.6M/week. Housemaid 3.5M. ABSENT in verticals'},
+  {trope:'Pregnancy / Secret Baby',verticals:2,books:2,streaming:0,cinema:0,vCount:10,note:'RS dedicated shelf'},
+  {trope:'Sports Romance',verticals:0,books:4,streaming:2,cinema:1,vCount:1,note:'Amazon Kindle: The Deal #2, Game On #11, In Her Own League #8'},
+  {trope:'Age Gap',verticals:1,books:3,streaming:2,cinema:1,vCount:3,note:'RS: 2 featured titles'},
+  {trope:'Action / Military',verticals:1,books:2,streaming:4,cinema:5,vCount:3,note:'Netflix #1. NetShort: male-action content rising'},
+  {trope:'Underdog Rise / Karma',verticals:2,books:1,streaming:1,cinema:1,vCount:8,note:'NetShort dominant trope. Male-skewed. Chinese origin.'},
+];
+
+const pitchRecs = [
+  {rank:1,title:'Romantasy / Fantasy Romance',why:'НАЙБІЛЬШИЙ ГЕП. ACOTAR 6&7 pre-orders у Top 5 Amazon Kindle (квітень 2026!). 4.4M + 3.7M Goodreads ratings. У вертикалах лише 3 тайтли — і ВСІ з високим IMDb (8.8+).',data:'Kindle: ACOTAR pre-orders #4-5 | Goodreads: ACOTAR 4.4M, Fourth Wing 3.7M | Verticals: Curse of Dragon King IMDb 8.8 | Score: 9.2',sources:'amazon.com, goodreads.com, filmora.wondershare.com'},
+  {rank:2,title:'Thriller / True Crime Romance',why:'Netflix #2 "Should I Marry A Murderer?" 10.6M/week. Housemaid 3.5M Goodreads. ПОВНІСТЮ ВІДСУТНІЙ у вертикалах. Жоден конкурент не робить.',data:'Netflix #2 10.6M/week | Goodreads: Housemaid 3.5M | Verticals: 0 thrillers | Score: 9.5',sources:'netflix.com/tudum, goodreads.com'},
+  {rank:3,title:'Dark Romance',why:'3 з Top 20 Amazon Kindle (квітень 2026) — dark romance! Twisted Pawn #3, The Ruler #12, My Dreadful Darling #19. H.D. Carlton продовжує домінувати. Bound by Vendetta (IMDb 9.1) — єдиний у вертикалах.',data:'Kindle Top 20: 3 dark romance titles | Haunting Adeline 931K | Verticals: 1 title (IMDb 9.1) | Score: 8.8',sources:'romancingthedata.com, goodreads.com'},
+  {rank:4,title:'Sports Romance',why:'Amazon Kindle квітень 2026: The Deal #2, In Her Own League #8, Game On #11. HBO Heated Rivalry. Netflix Running Point 6.7M/week. У вертикалах: НУЛЬ.',data:'Kindle: 3 sports romance у Top 20! | HBO adaptation | Netflix 6.7M/week | Verticals: 0 | Score: 8.5',sources:'romancingthedata.com, hbo.com, netflix.com'},
+  {rank:5,title:'Fake Dating',why:'BookTok тренд (Love Hypothesis). DramaBox #3 — крос-ринкова валідація. Але ніша не заповнена — лише 5 тайтлів.',data:'Books: Love Hypothesis trending | DB #3 | Verticals: 5 titles | Score: 7.5',sources:'goodreads.com, dramaboxdb.com'},
+  {rank:6,title:'Enemies to Lovers (premium)',why:'6M+ combined Goodreads. ACOTAR + Twisted Love. 18 тайтлів у вертикалах — є, але менше ніж диктує попит.',data:'Books: 6M+ combined ratings | Verticals: 18 titles | Score: 7.2',sources:'goodreads.com, microdramaradar.com'},
+];
+
+const gapData = [
+  {trope:'Romantasy',dramabox:'no',reelshort:'weak',goodshort:'no',netshort:'no',shortmax:'no',opp:'ВИСОКИЙ — ніхто'},
+  {trope:'Dark Romance',dramabox:'weak',reelshort:'weak',goodshort:'no',netshort:'no',shortmax:'no',opp:'ВИСОКИЙ — 1-2 max'},
+  {trope:'Thriller/True Crime',dramabox:'no',reelshort:'no',goodshort:'no',netshort:'no',shortmax:'no',opp:'МАКСИМАЛЬНИЙ'},
+  {trope:'Sports Romance',dramabox:'no',reelshort:'no',goodshort:'no',netshort:'no',shortmax:'no',opp:'ВИСОКИЙ — нуль'},
+  {trope:'Fake Dating',dramabox:'yes',reelshort:'weak',goodshort:'no',netshort:'no',shortmax:'no',opp:'СЕРЕДНІЙ'},
+  {trope:'Age Gap',dramabox:'no',reelshort:'yes',goodshort:'no',netshort:'no',shortmax:'no',opp:'СЕРЕДНІЙ'},
+  {trope:'Mafia Romance',dramabox:'yes',reelshort:'yes',goodshort:'yes',netshort:'yes',shortmax:'weak',opp:'НИЗЬКИЙ — всі роблять'},
+  {trope:'CEO/Billionaire',dramabox:'yes',reelshort:'yes',goodshort:'yes',netshort:'weak',shortmax:'yes',opp:'НАСИЧЕНО'},
+  {trope:'Werewolf/Alpha',dramabox:'yes',reelshort:'yes',goodshort:'yes',netshort:'yes',shortmax:'yes',opp:'НАСИЧЕНО'},
+  {trope:'Revenge + SFL',dramabox:'yes',reelshort:'yes',goodshort:'yes',netshort:'yes',shortmax:'yes',opp:'НАСИЧЕНО'},
+  {trope:'Underdog Rise (male)',dramabox:'weak',reelshort:'weak',goodshort:'weak',netshort:'yes',shortmax:'weak',opp:'NetShort домінує'},
+  {trope:'LGBTQ / BL',dramabox:'no',reelshort:'weak',goodshort:'no',netshort:'no',shortmax:'no',opp:'СЕРЕДНІЙ'},
+];
+
+const opportunities = [
+  {id:'opp1',title:'Romantasy --> Verticals',score:'high',scoreLabel:'9.2',desc:'ACOTAR pre-orders у Top 5 Amazon Kindle. 4.4M + 3.7M Goodreads. У вертикалах: 3 тайтли.',markets:['books','vertical','streaming'],evidence:'ACOTAR 6&7 pre-orders #4-5 Kindle Apr 2026. Fourth Wing 3.7M. Curse of Dragon King IMDb 8.8.',sources:['amazon.com/Best-Sellers-Romantasy','goodreads.com','filmora.wondershare.com']},
+  {id:'opp2',title:'Thriller/True Crime --> Verticals',score:'high',scoreLabel:'9.5',desc:'Netflix #2 (10.6M/week) + Housemaid 3.5M. НУЛЬ у вертикалах.',markets:['streaming','books','vertical'],evidence:'Netflix: Should I Marry A Murderer 10.6M/week. Amazon: Five (thriller). Housemaid 3.5M.',sources:['netflix.com/tudum','goodreads.com','amazon.com']},
+  {id:'opp3',title:'Dark Romance --> Verticals',score:'high',scoreLabel:'8.8',desc:'3 тайтли у Kindle Top 20 (Apr 2026). H.D. Carlton новий реліз #19. Bound by Vendetta IMDb 9.1.',markets:['books','vertical'],evidence:'Kindle Apr 2026: Twisted Pawn #3, Ruler #12, My Dreadful Darling #19. Haunting Adeline 931K.',sources:['romancingthedata.com','goodreads.com']},
+  {id:'opp4',title:'Sports Romance --> Verticals',score:'high',scoreLabel:'8.5',desc:'3 тайтли у Kindle Top 20! HBO Heated Rivalry. Netflix Running Point. НУЛЬ у вертикалах.',markets:['streaming','books','vertical'],evidence:'Kindle: Deal #2, In Her Own League #8, Game On #11. HBO adaptation. Netflix 6.7M/week.',sources:['romancingthedata.com','hbo.com','netflix.com']},
+  {id:'opp5',title:'Enemies to Lovers (premium)',score:'medium',scoreLabel:'7.2',desc:'6M+ combined Goodreads. 18 titles у вертикалах — недопредставлено.',markets:['books','vertical'],evidence:'ACOTAR 4.4M + Twisted Love 1.66M. MDR: 18.',sources:['goodreads.com','microdramaradar.com']},
+  {id:'opp6',title:'Werewolf — ОБЕРЕЖНО',score:'low',scoreLabel:'CAUTION',desc:'22+ titles. IMDb 4.9. Всі роблять. Сигнали насичення.',markets:['vertical'],evidence:'MDR: 22. Fated to Forbidden Alpha IMDb 4.9.',sources:['microdramaradar.com']},
+];
+
+// ===== RENDER =====
+const allTropes=[...new Set(trends.flatMap(t=>t.tags))].sort();
+(function(){const s=document.getElementById('tropeFilter');allTropes.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;s.appendChild(o)})})();
+
+function mp(m){const n={books:'Books',streaming:'Streaming',cinema:'Cinema',vertical:'Vertical Series',ai:'AI-Series'};return`<span class="pill pill-${m}">${n[m]||m}</span>`}
+function pp(p){const l={emerging:'Emerging',rising:'Rising',peaking:'Peaking',saturating:'Saturating'};return`<span class="phase phase-${p}">${l[p]||p}</span>`}
+
+function renderTrends(filter,search,prePeak,trope){
+  const container=document.getElementById('tropeGroupsContainer');
+  let filtered=trends.filter(t=>{
+    if(filter!=='all'&&t.market!==filter)return false;
+    if(prePeak&&t.phase!=='emerging'&&t.phase!=='rising')return false;
+    if(trope!=='all'&&!t.tags.includes(trope))return false;
+    if(search){const s=search.toLowerCase();return t.title.toLowerCase().includes(s)||t.desc.toLowerCase().includes(s)||t.tags.some(tg=>tg.toLowerCase().includes(s))}
+    return true;
+  });
+  document.getElementById('trendCount').textContent=`${filtered.length} з ${trends.length} трендів`;
+
+  // Group by trope groups
+  let grouped=tropeGroups.map(g=>{
+    const items=filtered.filter(t=>t.tags.some(tag=>g.match.includes(tag)));
+    return{...g,items};
+  });
+  // "Other" group for unmatched
+  const allMatched=new Set(grouped.flatMap(g=>g.items.map(i=>i.id)));
+  const other=filtered.filter(t=>!allMatched.has(t.id));
+  if(other.length) grouped.push({id:'other',label:'Інше',icon:'📌',items:other});
+
+  // Remove empty groups
+  grouped=grouped.filter(g=>g.items.length>0);
+
+  // Deduplicate: each trend appears in first matching group only
+  const shown=new Set();
+  grouped.forEach(g=>{
+    g.items=g.items.filter(t=>{if(shown.has(t.id))return false;shown.add(t.id);return true});
+  });
+  grouped=grouped.filter(g=>g.items.length>0);
+
+  container.innerHTML=grouped.map(g=>`
+    <div class="trope-group">
+      <div class="trope-group-header">
+        <span>${g.icon}</span>
+        <h3>${g.label}</h3>
+        <span class="count">${g.items.length} трендів</span>
+      </div>
+      <div class="cards-grid">${g.items.map(t=>`
+        <div class="card" onclick="openModal('${t.id}')">
+          <div class="card-title">${t.title}</div>
+          <div class="card-meta">${mp(t.market)} ${pp(t.phase)}</div>
+          <div class="card-desc">${t.desc}</div>
+          ${t.stats?`<div class="card-stats">${t.stats}</div>`:''}
+          <div class="card-source">${t.source}</div>
+        </div>`).join('')}</div>
+    </div>`).join('');
+}
+
+function renderComp(){
+  document.getElementById('compBody').innerHTML=competitors.map(c=>`
+    <tr${c.hl?' style="background:rgba(99,102,241,.08)"':''}>
+      <td class="${c.hl?'hl':''}" style="font-weight:600;white-space:nowrap">${c.name}</td>
+      <td>${c.revenue}</td><td>${c.mau}</td><td>${c.catalog}</td><td>${c.budget}</td><td>${c.audience}</td>
+      <td style="font-size:.74rem;color:var(--text-dim)">${c.facts}</td>
+      <td><a href="${c.sourceUrl}" target="_blank" style="font-size:.68rem">${c.source}</a></td>
+    </tr>`).join('');
+  document.getElementById('industryCards').innerHTML=industryFacts.map(f=>`
+    <div class="card" style="cursor:default"><div class="card-title" style="font-size:.8rem">${f.title}</div><div style="font-size:1.2rem;font-weight:700;color:var(--accent2);margin:5px 0">${f.value}</div><div class="card-desc">${f.detail}</div><div class="card-source"><a href="${f.sourceUrl}" target="_blank">${f.source}</a></div></div>`).join('');
+  document.getElementById('compTrending').innerHTML=Object.entries(compTrendingData).map(([n,d])=>`
+    <div class="ct-card"><h4>${n} <span style="font-weight:400;font-size:.68rem;color:var(--text-dim)">(${d.source})</span></h4>${d.items.map(i=>`<div class="ct-item">${i}</div>`).join('')}</div>`).join('');
+}
+function renderOpp(){
+  document.getElementById('oppCards').innerHTML=opportunities.map(o=>`
+    <div class="opp-card" onclick="openOppModal('${o.id}')"><div class="opp-header"><div class="opp-title">${o.title}</div><div class="opp-score ${o.score}">${o.scoreLabel}</div></div><div class="opp-desc">${o.desc}</div><div class="opp-pills">${o.markets.map(m=>mp(m)).join('')}</div><div class="opp-evidence">${o.evidence}</div></div>`).join('');
+}
+function renderPitch(){
+  document.getElementById('pitchCards').innerHTML=pitchRecs.map(p=>`
+    <div class="pitch-card"><div class="pitch-rank">#${p.rank}</div><div class="pitch-title">${p.title}</div><div class="pitch-why">${p.why}</div><div class="pitch-data">${p.data}</div><div style="font-size:.68rem;color:var(--text-dim);margin-top:3px">Sources: ${p.sources}</div></div>`).join('');
+}
+function renderGap(){
+  const si=s=>s==='yes'?'<span class="yes">✅ є</span>':s==='no'?'<span class="no">❌ немає</span>':'<span class="weak">⚠️ слабко</span>';
+  document.getElementById('gapTableWrap').innerHTML=`<table class="gap-table"><thead><tr><th>Троп</th><th>DramaBox</th><th>ReelShort</th><th>GoodShort</th><th>NetShort</th><th>ShortMax</th><th>Можливість</th></tr></thead><tbody>${gapData.map(g=>`<tr><td>${g.trope}</td><td>${si(g.dramabox)}</td><td>${si(g.reelshort)}</td><td>${si(g.goodshort)}</td><td>${si(g.netshort)}</td><td>${si(g.shortmax)}</td><td style="font-size:.73rem;font-weight:500;color:${g.opp.includes('ВИСОКИЙ')||g.opp.includes('МАКСИМАЛЬНИЙ')?'var(--green)':g.opp.includes('СЕРЕДНІЙ')?'var(--yellow)':'var(--red)'}">${g.opp}</td></tr>`).join('')}</tbody></table>`;
+}
+function renderHeatmap(){
+  const hc=v=>'heat-'+v;
+  document.getElementById('heatmapWrap').innerHTML=`<table class="heatmap"><thead><tr><th>Троп</th><th>Verticals</th><th>Books</th><th>Streaming</th><th>Cinema</th><th style="text-align:left">Count</th><th style="text-align:left">Примітка</th></tr></thead><tbody>${tropeHeatmap.map(r=>`<tr><td class="tn">${r.trope}</td><td class="${hc(r.verticals)}">${r.verticals}</td><td class="${hc(r.books)}">${r.books}</td><td class="${hc(r.streaming)}">${r.streaming}</td><td class="${hc(r.cinema)}">${r.cinema}</td><td style="text-align:left;color:var(--accent2);font-weight:600">${r.vCount}</td><td style="text-align:left;font-size:.7rem;color:var(--text-dim)">${r.note}</td></tr>`).join('')}</tbody></table>`;
+}
+
+// ===== ANALYSIS DATA =====
+const phaseExplain={
+  emerging:'<b>Emerging</b> — тренд тільки з\'являється. Ранній сигнал: поки мало даних, але є перші ознаки зростання. Ідеальний час для входу — низька конкуренція, високий потенціал.',
+  rising:'<b>Rising</b> — тренд активно зростає. Попит підтверджений даними, але ніша ще не переповнена. Час діяти: розробка контенту зараз дасть результат через 2-3 місяці.',
+  peaking:'<b>Peaking</b> — тренд на піку популярності. Максимальний попит, але конкуренція також висока. Робити можна, але потрібна диференціація — стандартний підхід вже не виграє.',
+  saturating:'<b>Saturating</b> — ринок перенасичений цим трендом. Нові тайтли губляться серед існуючих. Рекомендація: або знайти свіжий кут, або переключитись на emerging тренди.'
+};
+const A={
+  // DRAMABOX
+  db1:{why:'#1 у trending на DramaBox (найбільший каталог — 3,496 серіалів). Комбінація Revenge + Strong Female Lead + CEO — це три найпопулярніші тропи на MicroDrama Radar (76 + 36 + 53 titles відповідно).',action:'Цю комбінацію вже роблять всі. Якщо робити — потрібен свіжий twist: наприклад, додати елемент thriller або dark romance замість стандартного CEO.',about:'52-серійний серіал про жінку, яку недооцінювали, але вона виявляється прихованим босом. Класичний Female Empowerment формат.',pop:'Популярність пояснюється "wish fulfillment" механізмом — аудиторія (56.5% жінки на DramaBox) ідентифікує себе з героїнею, яка бере реванш. Формула працює, але ризик втоми аудиторії від однотипних сюжетів зростає.'},
+  db2:{why:'#2 DramaBox trending. Чистий Romance — найбільший троп у вертикальних серіалах (96 titles на MicroDrama Radar). Стабільний попит.',action:'Romance — safe bet, але потрібна УТП. Подумайте про нішеві romance: sports romance (0 titles!), fake dating, або age gap — менше конкуренції.',about:'65-серійний романтичний серіал. Назва натякає на addictive, passionate romance.',pop:'Чистий romance без ускладнень — комфортний контент для щоденного перегляду. Аналог "comfort food" у серіалах. Висока повернення, але низький вірусний потенціал.'},
+  db3:{why:'#3 DramaBox. Fake Dating — троп, який зараз вибухає у книгах (Love Hypothesis на BookTok). У вертикалах лише ~5 titles — величезний простір для зростання.',action:'РОБИТИ! Fake Dating — один з найперспективніших тропів. Крос-ринкова валідація: книги + вертикали. Мало конкуренції серед вертикальних серіалів.',about:'62 серії. Героїня змушена прикидатись парою свого ворога-багатія. Класичний fake-dating setup.',pop:'Troп працює через tension між "ми прикидаємось" і "але почуття справжні". BookTok-аудиторія вже знає і любить цей формат — cross-pollination з книжковою аудиторією.'},
+  db4:{why:'#4 DramaBox. Ще один Revenge + SFL у Top 5 — підтверджує, що це домінантна комбінація.',action:'Насичення цього комбо зростає (2 з Top 5 — один і той же формат). Краще шукати менш зайняті ніші.',about:'64 серії. Жінка стає босом і доводить, що її недооцінювали.',pop:'Успіх тримається на емоційному payoff "я вам покажу". Але DramaBox вже має десятки таких — diminishing returns.'},
+  db5:{why:'#5 DramaBox. Enemies to Lovers — троп з 18 titles на MDR, але МАСИВНИЙ у книгах (ACOTAR 4.4M ratings, Twisted Love 1.66M). Крос-ринкова валідація.',action:'EtL — потужний троп для преміум контенту. Рекомендація: не просто romance, а EtL з елементами romantasy або dark romance для диференціації.',about:'51 серія. Ворожі відносини з братом ворога, що перетворюються на романс.',pop:'EtL працює через sexual tension і emotional arc від ненависті до кохання. Один з найбільш addictive тропів — глядач чекає "коли ж вони зізнаються".'},
+  db6:{why:'#6 DramaBox. CEO троп — 33 titles на MDR + 20 Billionaire = 53 combined. Стабільно популярний, але насичення високе.',action:'CEO/Billionaire — перенасичений формат. Якщо робити — тільки з унікальним hook: CEO + thriller, CEO + supernatural, CEO з disability.',about:'50 серій. Серіал про CEO і обман у стосунках.',pop:'CEO/Billionaire — escapism у чистому вигляді. Працює, бо аудиторія мріє про lifestyle, який зображується. Але конкуренція жорстка.'},
+  db7:{why:'Dual trending на DramaBox і MicroDrama Radar — подвійний сигнал валідує попит. Family + SFL + CEO — потрійний комбо.',action:'Dual trending — сильний сигнал. Family-oriented серіали з SFL — менш перенасичена ніша ніж чистий Revenge. Варто спробувати саме Family + Empowerment.',about:'63 серії. Мати-героїня, яка одночасно керує сім\'єю і бізнесом.',pop:'Резонує з аудиторією 30+, яка бачить себе у героїні-матері. GoodShort підтверджує: "Blood and Bones" (Family) набрала 33.5M views — найбільший хіт платформи.'},
+  db8:{why:'#9 DramaBox. Werewolf — 22 titles на MDR. Жанр має dedicated аудиторію, але сигнали перенасичення (Fated to Forbidden Alpha — IMDb 4.9).',action:'ОБЕРЕЖНО. Werewolf — ніша з лояльною аудиторією, але якість падає. Якщо робити — тільки преміум (Curse of Dragon King показує IMDb 8.8 можливий).',about:'67 серій. Після розлучення героїня стає принцесою ліканів.',pop:'Werewolf — "guilty pleasure" жанр. Фанати лояльні, але casual аудиторія не приходить. Ceiling обмежений.'},
+  db9:{why:'DramaBox trending. Mafia Romance — крос-ринковий троп (Den of Vipers на Goodreads, GoodShort "Kidnapped by the Mafia" 15.2M views).',action:'Mafia romance має стабільний попит. Можна робити, але диференціювати: dark mafia з справжнім напруженням, а не стандартний "поганий хлопець + добра дівчина".',about:'67 серій. Героїня прив\'язана до небезпечного мафіозі.',pop:'Mafia romance працює через "bad boy" appeal + danger/protection dynamic. GoodShort: 15.2M views для mafia title — валідація попиту.'},
+  db10:{why:'DramaBox p2. Revenge + CEO знову. Divorce-to-heiress arc — popular narrative.',action:'Формула вже відпрацьована. Нічого нового не додає до портфоліо.',about:'Після розлучення героїня стає спадкоємицею і мститься.',pop:'Divorce revenge — спекотне комбо, але вже стандарт.'},
+  db11:{why:'DramaBox p3. Toxic love + Love Triangle — drama-driven engagement.',action:'Toxic love генерує engagement але поляризує. Можна тестувати в невеликому обсязі.',about:'Серіал про небезпечний потяг у трикутнику стосунків.',pop:'Controversy sells — токсичні відносини генерують обговорення і shares.'},
+  db12:{why:'DramaBox p3. Werewolf + Rebirth — подвійний niche combo. Emerging — ще не пікнув.',action:'Werewolf + Rebirth — специфічна ніша. Не пріоритет для MyDrama.',about:'Омега повертається переродженою.',pop:'Двошарова premise для лояльних фанатів обох жанрів.'},
+  // GOODSHORT
+  gs1:{why:'33.5 МІЛЬЙОНІВ переглядів на GoodShort — це MEGA-HIT. Найпопулярніший серіал на платформі. Family + Heiress + Revenge — потрійне комбо, яке резонує з масовою аудиторією.',action:'Family drama з елементом heiress — РОБИТИ. Цей формат доводить, що emotional family stories можуть бути bigger than romance. Рекомендація: strong emotional arc + surprise reveals.',about:'64 серії. Відкинута дочка, яка повертається за своє. Класичний Cinderella-revenge.',pop:'33.5M views пояснюються universal appeal: кожен може відчути несправедливість і мріяти про реванш. Emotional beats (відторгнення → страждання → тріумф) працюють cross-culturally.'},
+  gs2:{why:'15.2M views. Mafia + Contract Marriage — валідована комбінація. Другий за переглядами на GoodShort.',action:'Mafia + marriage combo працює. Можна адаптувати з більш dark/thriller елементами.',about:'87 серій (один з найдовших). Героїня викрадена мафією, вимушена вийти заміж.',pop:'87 епізодів = висока утримуваність. Mafia captivity romance — taboo appeal.'},
+  gs3:{why:'3.3M views. Revenge + Underdog Rise + CEO — triple combo. CEO-формат доводить стабільний попит.',action:'Underdog Rise — цікавий для male-oriented контенту (NetShort домінує тут). Для MyDrama — можна тестити.',about:'59 серій. Бездомний геній рятує компанію і мститься тим, хто його зрадив.',pop:'Wish fulfillment для чоловічої аудиторії. Аналог NetShort content але на GoodShort.'},
+  gs4:{why:'2.3M views. Family + Contract Marriage. Cute Kids + Secret Identity — emotional engagement drivers.',action:'Family-oriented сладкий контент — стабільна ніша з loyal аудиторією.',about:'60 серій. Батько знаходить свою дитину на будівництві.',pop:'Cute kids content генерує emotional engagement і shares в соцмережах.'},
+  gs5:{why:'692K views. Werewolf + Toxic Love на GoodShort. Менше views ніж топи, але жанр має dedicated fanbase.',action:'Werewolf — не пріоритет. Середні перегляди підтверджують обмежений ceiling.',about:'47 серій. Альфа-вовк і toxic love динаміка.',pop:'Niche audience. Loyal but limited.'},
+  // REELSHORT
+  rs1:{why:'IMDb 9.3 — НАЙВИЩИЙ рейтинг серед усіх вертикальних серіалів на ReelShort. Marriage trope, але з real emotional depth — immigration/greencard story.',action:'Цей серіал доводить: ЯКІСТЬ > формула. Оригінальна premise (greencard marriage) + emotional depth = top ratings. Рекомендація: інвестуйте в оригінальні premises замість generic формул.',about:'58 серій. Шлюб заради грінкарти, який перетворюється на справжнє кохання. Культурно-специфічна romance.',pop:'IMDb 9.3 при тому, що середній рейтинг вертикалів 6-7. Доводить, що аудиторія відрізняє якість. Culturally specific premise створює authenticity.'},
+  rs2:{why:'IMDb 9.1. Єдиний full dark romance у вертикальних серіалах — і він #2 за рейтингом. Доводить МАСИВНИЙ попит на dark romance.',action:'ТЕРМІНОВО РОБИТИ dark romance. Один тайтл з IMDb 9.1 = proof of concept. А у книгах — Haunting Adeline 931K ratings, Twisted Love 1.66M. Ніша порожня і голодна.',about:'66 серій. Темна романтика з vendetta-сюжетом. Ворог стає коханцем.',pop:'Dark romance = taboo + passion + danger. BookTok вже виховала масову аудиторію на цьому жанрі. Вертикальні серіали мають шанс перехопити цю аудиторію.'},
+  rs3:{why:'500 МІЛЬЙОНІВ переглядів — абсолютний рекорд ReelShort. Billionaire + Hidden Identity — найкомерційніша комбінація у вертикалах.',action:'Цей тайтл вже існує і вичерпав первинний hype. Повторити важко — але lesson: viral potential у Billionaire + secret identity. Не копіюйте — знайдіть свій "500M views" hook.',about:'60 серій. Подвійне життя чоловіка-мільярдера, дружина не знає хто він.',pop:'IMDb 6.1 при 500M views — proof що вірусність ≠ якість. Працює clickbait-premise: "double life" intrigue. Масовий appeal побив критиків.'},
+  rs4:{why:'IMDb 8.8. Один з ТРЬОХ romantasy тайтлів у ВСІХ вертикальних серіалах. Всі три мають 8.8+ IMDb. А у книгах romantasy — ACOTAR 4.4M, Fourth Wing 3.7M.',action:'ПРІОРИТЕТ #1 для MyDrama/MyMuse. Romantasy — найбільший геп між попитом (книги) і пропозицією (вертикали). Curse of Dragon King доводить, що формат працює і аудиторія оцінює високо.',about:'70 серій. Fantasy romance з драконами і магією. Прокляття короля, яке може зняти лише кохання.',pop:'Romantasy = найшвидше зростаючий жанр у книгах 2024-2026. ACOTAR 6&7 pre-orders ще у Top 5 Amazon Kindle. Вертикальні серіали — blue ocean.'},
+  rs5:{why:'ReelShort New Release. Action + Male Lead — рідкісний формат для ReelShort (75% female audience). Тест нового сегменту.',action:'Спостерігати. Якщо male-action заходить на ReelShort — це сигнал розширення аудиторії. NetShort вже домінує у цьому сегменті.',about:'Повернення воїна. Male-led action.',pop:'ReelShort тестує male content слідом за NetShort. Сигнал: платформи диверсифікуються.'},
+  rs6:{why:'Featured на ReelShort. Age Gap — троп з лише ~3 titles у вертикалах, але growing у книгах (Shhh, Professor!).',action:'Age Gap — niche але loyal audience. Можна тестити один тайтл.',about:'Age gap romance з hidden identity елементом.',pop:'Taboo appeal + forbidden romance dynamic.'},
+  // NETSHORT
+  ns1:{why:'#1 trending на NetShort (97M downloads, 3-тя платформа за доходом). "Karma Payback" — домінантний троп NetShort. Male-oriented revenge.',action:'NetShort — male-skewed платформа. Karma Payback = revenge для чоловіків. Якщо MyDrama хоче male audience — вивчити цей формат.',about:'Герой, якого всі вважали слабаком, виявляється наймогутнішим. Класичний "underestimated protagonist".',pop:'Male power fantasy — китайський originated формат, адаптований для міжнародної аудиторії. Працює через empowerment і revenge satisfaction.'},
+  ns2:{why:'#2 NetShort. Modern Romance + Karma Payback — гібрид romantic revenge для mixed аудиторії.',action:'Romance + revenge hybrid — потенційно цікавий для ширшої аудиторії ніж чистий male revenge.',about:'Героїня банкрутить чоловіка-зрадника.',pop:'Female revenge але з male platform reach. Crossover potential.'},
+  ns3:{why:'#3 NetShort. Female Empowerment — NetShort розширюється від чисто male content.',action:'Сигнал: навіть male-skewed NetShort додає female empowerment. Universality цього тропу.',about:'Жінка доводить свою силу тим, хто її покинув.',pop:'Female empowerment працює cross-gender — і чоловіча аудиторія дивиться.'},
+  ns4:{why:'NetShort trending. Underdog Rise — core troр NetShort. Dubbed Chinese content.',action:'Underdog Rise — male niche. NetShort домінує. Не пріоритет для MyDrama.',about:'Тесляр без вовчих здібностей стає володарем світу.',pop:'Chinese webnovel adaptation. Niche male fantasy.'},
+  ns5:{why:'NetShort trending. Fantasy Romance — цікаво, що навіть male-skewed платформа має fantasy romance.',action:'Fantasy Romance на NetShort = signal що жанр працює cross-platform.',about:'Героїня полонена лев-чарівником. Fantasy romantic premise.',pop:'Fantasy romance transcends gender audience.'},
+  ns6:{why:'NetShort trending. Female Empowerment + Fantasy. Dragon-themed.',action:'Дракони + female lead — це буквально romantasy premise. Ще один сигнал.',about:'Дочка, яка командує драконом.',pop:'Dragon content резонує з Fourth Wing fans.'},
+  // MICRODRAMA RADAR
+  mdr1:{why:'Rising this week на MicroDrama Radar (агрегатор даних по вертикальним серіалам). Royalty + Fantasy — early signal.',action:'Royalty romance — під-ніша, яка growing. Потенціал для period/historical romance у vertical формат.',about:'Наречена кронпринца. Royalty romance.',pop:'Royal romance — aspirational + fairy-tale appeal.'},
+  mdr2:{why:'MDR trending. Body-positive revenge — СВІЖИЙ twist на стандартному revenge форматі.',action:'Body-positive angle — диференціація! Свіжий take на oversaturated revenge формат. Варто вивчити.',about:'Жінка з нестандартною фігурою мститься тим, хто її принижував.',pop:'Body positivity + revenge = timely, resonant, shareable. Social media hook.'},
+  mdr3:{why:'MDR trending. Werewolf + SFL. Стандартний combo для werewolf niche.',action:'Werewolf — не пріоритет. Перенасичення.',about:'Жінка-альфа. Werewolf empowerment.',pop:'Loyal niche audience, limited growth.'},
+  // NETFLIX
+  nf1:{why:'#1 GLOBALLY на Netflix. 11 мільйонів переглядів на ТИЖДЕНЬ. Action/Thriller — домінантний жанр стримінгу.',action:'Action/thriller домінує у streaming, але ВІДСУТНІЙ у вертикальних серіалах. Величезний невикористаний потенціал. Адаптація thriller-формату під vertical = blue ocean.',about:'Thriller-action серіал. #1 у світі на Netflix.',pop:'Action appeals to broad, gender-balanced audience. Streaming proves massive demand.'},
+  nf2:{why:'#2 Netflix Global, 10.6M views/week. True Crime + Romance hook. Thriller з романтичним елементом — cross-genre hit.',action:'ПРІОРИТЕТ. True crime/thriller romance — НУЛЬ у вертикальних серіалах. Netflix доводить масовий попит. "Should I Marry A Murderer?" — навіть назва є hook masterclass. Робіть thriller з romance hook.',about:'"Чи виходити за вбивцю?" — true crime із романтичною інтригою.',pop:'Назва сама по собі — viral hook. True crime — найбільш addictive жанр у podcasts, books, streaming. Vertical series ще не освоїли.'},
+  nf3:{why:'#4 Netflix. 6.7M views/week + Season 1 теж у Top 10 (#7). Sports drama — growing genre у streaming.',action:'Sports romance + sports drama — зростаючий жанр. HBO Heated Rivalry + Netflix Running Point. У вертикалах: НУЛЬ. Amazon Kindle: The Deal #2, Game On #11.',about:'Спортивна драма. Сезон 2 показує franchise potential.',pop:'Sports creates emotional stakes + physical drama. Season 2 success = proven franchise.'},
+  nf4:{why:'Netflix franchise juggernaut. Bridgerton довів що romance + period drama = масовий streaming hit.',action:'Bridgerton effect: romance content is mainstream entertainment, not niche. Vertical series should leverage this validation.',about:'Romantic period drama. Continuing Netflix mega-franchise.',pop:'Bridgerton нормалізувала romance у mainstream. Вплив на всю індустрію.'},
+  nf5:{why:'HBO адаптує BOOK "Heated Rivalry" (sports romance). Book-to-screen pipeline для romance активний.',action:'Sports romance — incoming trend. HBO адаптація означає: великі студії бачать потенціал. Вертикальні серіали мають шанс діяти ЗАРАЗ, до хвилі.',about:'Спортивний романс. Адаптація популярного роману.',pop:'Book-to-screen = validated IP. Sports romance growing from niche to mainstream.'},
+  nf6:{why:'GoT universe. HBO продовжує інвестувати у epic fantasy. Fantasy = premium content.',action:'Fantasy залишається premium streaming жанром. Вертикальні серіали можуть адаптувати у lighter romantasy формат.',about:'Game of Thrones universe expansion.',pop:'GoT franchise proves long-term fantasy audience.'},
+  // CINEMA
+  ci1:{why:'#1 Box Office 2026. Sci-fi/fantasy franchise домінує у кінотеатрах.',action:'Sci-fi — не для vertical серіалів у чистому вигляді. Але fantasy elements (магія, інші світи) — так.',about:'Avatar franchise. #1 at box office.',pop:'Franchise power + visual spectacle.'},
+  ci2:{why:'#2 Box Office. Literary adaptation = validated IP pipeline. Romance/period drama у кінотеатрах.',action:'Literary adaptations працюють cross-format. Classic romance IP має потенціал для vertical adaptation.',about:'Екранізація Emily Bronte. Classic romance.',pop:'Classic literature + modern adaptation = cross-generational appeal.'},
+  ci3:{why:'#4 Box Office. Book adaptation (Andy Weir). Books remain #1 source of cinema IP.',action:'Book-to-screen pipeline активний. Шукайте trending books для vertical adaptation ideas.',about:'Sci-fi adaptation від автора "The Martian".',pop:'Proven IP from bestselling book.'},
+  ci4:{why:'#7 Box Office. Sequel/franchise play. Female-led comedy-drama.',action:'Nostalgia + franchise — cinema тренд. Female-led content validated across all markets.',about:'Сіквел хіту 2006 року.',pop:'Nostalgia marketing + female audience power.'},
+  // BOOKS — GOODREADS
+  bk1:{why:'931K Goodreads ratings. BookTok PHENOMENON. Dark Romance — найшвидше зростаючий піджанр 2024-2026. H.D. Carlton — queen of dark romance.',action:'НЕГАЙНО інвестувати у dark romance вертикальні серіали. 931K readers = proven massive audience. "Bound by Vendetta" (IMDb 9.1) доводить що формат працює у вертикалах.',about:'Dark romance. Stalker-romance: героїня переслідувана одержимим чоловіком. Cat & Mouse duet.',pop:'BookTok algorithm створив viral loop: dark romance рекомендується, читається, рецензується, рекомендується знову. Self-perpetuating trend.'},
+  bk2:{why:'4.4 МІЛЬЙОНИ Goodreads ratings. THE defining romantasy title. Створила цілий жанр "romantasy". Pre-orders для книг 6&7 у Top 5 Amazon Kindle (квітень 2026!).',action:'ACOTAR = north star для romantasy контенту. Fantasy world + enemies to lovers + strong female lead + romance = формула, яку вертикальні серіали МАЮТЬ адаптувати. Найбільша незаповнена ніша.',about:'Fantasy romance: героїня потрапляє у магічний світ. Серія з 7 книг. Enemies to lovers, fae, magic.',pop:'4.4M ratings = one of most-rated books EVER on Goodreads. Sarah J. Maas створила cultural phenomenon. Вплив на reading habits цілого покоління.'},
+  bk3:{why:'3.7M ratings. Dragon riders + romance + military academy. Разом з ACOTAR визначає romantasy хвилю.',action:'Dragon/fantasy + romance + academy setting = potential vertical series goldmine. Visual potential enormous.',about:'Dragon rider academy. Romance між ворогами. Military setting з магією.',pop:'Fourth Wing + Iron Flame тримаються у Most Read 120+ тижнів. Reader loyalty = extreme.'},
+  bk4:{why:'1.66M ratings. Ana Huang. Billionaire + Dark Romance + Enemies to Lovers — triple combo що існує в обох ринках (books + verticals).',action:'Крос-ринкова валідація. Twisted Love readers = potential vertical series viewers. Marketing angle: "fans of Twisted Love will love..."',about:'Billionaire dark romance. Enemies to lovers. Twisted series.',pop:'Ana Huang — queen of "spicy" romance. 1.66M readers actively seeking this content.'},
+  bk5:{why:'3.5M ratings. Domestic thriller #1. Cross-market signal: matches Netflix thriller success.',action:'Thriller з female protagonist + twist ending = РОБИТИ ДЛЯ ВЕРТИКАЛІВ. Housemaid + Netflix "Should I Marry A Murderer?" = dual validation.',about:'Домашній thriller. Хатня робітниця розкриває таємниці родини.',pop:'3.5M = thriller readers are MASSIVE audience. Vertical series haven\'t tapped this AT ALL.'},
+  bk6:{why:'BookTok phenomenon. Fake Dating in STEM — fresh setting для classic trope.',action:'Fake dating + unique setting (STEM, not just billionaire) = differentiator. DramaBox #3 validates fake dating у вертикалах.',about:'Fake dating у науковому середовищі. Ali Hazelwood.',pop:'STEM setting normalizes "smart heroines". BookTok loves recommending specific tropes.'},
+  bk7:{why:'Dark romance + mafia. Reverse harem. Goodreads dark romance shelf regular.',action:'Mafia dark romance = validated. Den of Vipers readers + "Kidnapped by the Mafia" 15.2M views on GoodShort = complete pipeline.',about:'Mafia dark romance. Multiple love interests. K.A. Knight.',pop:'Reverse harem = growing sub-niche. Taboo + dark + multiple partners.'},
+  bk8:{why:'Colleen Hoover. Thriller + dark romance crossover. Film adaptation in development.',action:'CoHo effect: her readers consume content across formats. Vertical series can capture this audience.',about:'Psychological thriller з dark romance елементами. Colleen Hoover.',pop:'CoHo is a brand, not just an author. Her readers follow her across genres.'},
+  // AMAZON KINDLE
+  az1:{why:'#1 Amazon Kindle Romance, квітень 2026. NEW entry — свіжий тренд. Devney Perry — consistent bestseller.',action:'Monitor Devney Perry titles for adaptation ideas. Her style = emotional, small-town romance.',about:'Romance від Devney Perry. New #1 hit.',pop:'New entries hitting #1 = fresh audience appetite. Market is active and rotating.'},
+  az2:{why:'#2 Kindle Romance. Elle Kennedy — sports romance queen. "The Deal" backlist success proves sports romance has LEGS.',action:'ПІДТВЕРДЖУЄ sports romance тренд. The Deal не нова книга — її повернення у Top 5 = sustained demand, не одноразовий spike.',about:'Sports romance. Hockey player + student. Classic Elle Kennedy.',pop:'Backlist bestseller = proof of evergreen demand. Sports romance is not a fad.'},
+  az3:{why:'#3 Kindle, NEW entry. L.J. Shen = dark romance pillar. "Twisted Pawn" = dark/bully romance.',action:'ТРИ dark romance titles у Top 20 Kindle. Цей жанр ДОМІНУЄ Amazon. Вертикальні серіали: 1 тайтл.',about:'Dark/bully romance. L.J. Shen.',pop:'Dark romance readers buy consistently. High-frequency consumption = perfect for serial format.'},
+  az4:{why:'#4 & #5 Kindle — PRE-ORDERS! ACOTAR 6 та 7 ще навіть не вийшли, а вже у Top 5. Безпрецедентний рівень anticipation.',action:'Коли PRE-ORDERS б\'ють existing books — це cultural moment. MyDrama MUST have romantasy content ready when these books release.',about:'Romantasy. Sarah J. Maas. ACOTAR series continuation.',pop:'Pre-order phenomenon = unprecedented reader loyalty. This audience WILL consume romantasy content across formats.'},
+  az5:{why:'#8 Kindle. Sports romance. Liz Tomforde — rising sports romance author.',action:'Третій sports romance у Top 20. Pattern is undeniable: sports romance is mainstream now.',about:'Sports romance.',pop:'Multiple authors succeeding = genre validation, not just one author\'s luck.'},
+  az6:{why:'#12 Kindle, NEW. Penelope Sky = mafia/dark romance. The Ruler = dark power dynamic.',action:'Mafia dark romance continues to place in bestsellers.',about:'Mafia/dark romance. Penelope Sky.',pop:'Penelope Sky readers are loyal and high-frequency.'},
+  az7:{why:'#13 Kindle. Rebecca Yarros — author of Fourth Wing (3.7M ratings). Her backlist benefits from romantasy fame.',action:'Yarros halo effect: her romance backlist sells because of Fourth Wing fame. Same audience.',about:'Romance від Rebecca Yarros. Non-fantasy title.',pop:'Author brand power. Fourth Wing readers buying everything she writes.'},
+  az8:{why:'#19 Kindle, NEW. H.D. Carlton — автор Haunting Adeline (931K). НОВИЙ реліз одразу у Top 20.',action:'H.D. Carlton\'s new release = event. Her audience is massive, loyal, and hungry for dark romance vertical series.',about:'Dark romance. H.D. Carlton. Follow-up to Haunting Adeline universe.',pop:'931K readers waiting for each new Carlton release. Automatic bestseller.'},
+  az9:{why:'Amazon Romantasy bestseller. When the Moon Hatched — Moonfall Series. Growing romantasy catalogue.',action:'Romantasy catalogue expanding = genre maturity. More readers, more content, more cross-format potential.',about:'Romantasy. Sarah A. Parker. Moonfall Series.',pop:'New romantasy series succeeding = genre is expanding, not just Maas/Yarros.'},
+  az10:{why:'#11 Kindle, NEW. Sports romance. Navessa Allen.',action:'Ще один sports romance у Top 20. Тренд підтверджено many times over.',about:'Sports romance.',pop:'Genre depth: multiple new authors succeeding.'}
+};
+
+// ===== MODALS (RICH) =====
+function openModal(id){
+  const t=trends.find(x=>x.id===id);if(!t)return;
+  const a=A[id]||{};
+  const pe=phaseExplain[t.phase]||'';
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h2>${t.title}</h2>
+    <div class="modal-pills" style="margin-top:6px">${mp(t.market)} ${pp(t.phase)} ${t.tags.map(tg=>`<span class="pill pill-trope">${tg}</span>`).join('')}</div>
+    ${t.stats?`<div class="ds"><h4>📊 Метрики</h4><p>${t.stats}</p></div>`:''}
+    ${a.about?`<div class="ds"><h4>📝 Про що</h4><p>${a.about}</p></div>`:''}
+    ${a.why?`<div class="ds"><h4>🔍 Чому у трендах</h4><p>${a.why}</p></div>`:''}
+    <div class="ds"><h4>📈 Статус тренду</h4><p>${pe}</p></div>
+    ${a.action?`<div class="ds" style="background:rgba(99,102,241,.06);border-radius:8px;padding:10px"><h4>🎯 Що робити MyDrama/MyMuse</h4><p>${a.action}</p></div>`:''}
+    ${a.pop?`<div class="ds"><h4>💭 Аналіз популярності</h4><p style="font-style:italic">${a.pop}</p></div>`:''}
+    <div class="ds"><h4>🔗 Джерело</h4><a href="${t.sourceUrl}" target="_blank" style="font-size:.8rem;color:var(--accent2)">${t.source}</a></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function openOppModal(id){
+  const o=opportunities.find(x=>x.id===id);if(!o)return;
+  document.getElementById('modalContent').innerHTML=`<button class="modal-close" onclick="closeModal()">&times;</button><h2>${o.title}</h2><div class="modal-pills" style="margin-top:6px">${o.markets.map(m=>mp(m)).join('')} <span class="opp-score ${o.score}" style="margin-left:6px">${o.scoreLabel}</span></div><div class="ds"><h4>Опис</h4><p>${o.desc}</p></div><div class="ds"><h4>Докази</h4><p>${o.evidence}</p></div><div class="ds"><h4>Джерела</h4><ul>${o.sources.map(s=>`<li>${s}</li>`).join('')}</ul></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// ===== CHARTS =====
+const CC=['#6366f1','#818cf8','#a78bfa','#c4b5fd','#34d399','#22c55e','#eab308','#f97316','#ef4444','#ec4899','#f472b6','#fb923c','#06b6d4','#14b8a6','#84cc16'];
+let cr={};
+function renderTropeCharts(){
+  if(cr.t)return;cr.t=true;
+  const td=[...tropeHeatmap].sort((a,b)=>b.vCount-a.vCount).slice(0,15);
+  new Chart(document.getElementById('tropesBarChart'),{type:'bar',data:{labels:td.map(t=>t.trope),datasets:[{data:td.map(t=>t.vCount),backgroundColor:CC,borderRadius:4,barThickness:16}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
+  const bd=tropeHeatmap.map(t=>({x:t.books,y:t.streaming,r:Math.max(3,(5-t.verticals)*6),label:t.trope}));
+  new Chart(document.getElementById('bubbleChart'),{type:'bubble',data:{datasets:[{data:bd.map(b=>({x:b.x,y:b.y,r:b.r})),backgroundColor:bd.map((_,i)=>CC[i%CC.length]+'99'),borderColor:bd.map((_,i)=>CC[i%CC.length]),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=bd[c.dataIndex];return d.label+' (Books:'+d.x+', Stream:'+d.y+')'}}}},scales:{x:{title:{display:true,text:'Books (0-5)',color:'#94a3b8'},grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'},min:0,max:6},y:{title:{display:true,text:'Streaming (0-5)',color:'#94a3b8'},grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'},min:0,max:6}}}});
+  const sat=[...tropeHeatmap].sort((a,b)=>b.vCount-a.vCount);
+  new Chart(document.getElementById('saturationChart'),{type:'bar',data:{labels:sat.map(t=>t.trope),datasets:[{data:sat.map(t=>t.vCount),backgroundColor:sat.map(t=>t.vCount>40?'#ef4444':t.vCount>20?'#f97316':t.vCount>10?'#eab308':'#22c55e'),borderRadius:3,barThickness:14}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:8},maxRotation:45}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}}}}});
+}
+function renderCompDonuts(){
+  if(cr.d)return;cr.d=true;
+  new Chart(document.getElementById('donutDramabox'),{type:'doughnut',data:{labels:['CEO/Billionaire','Revenge','Romance/Sweet','Fantasy','Werewolf','Family','Mafia','Other'],datasets:[{data:[12,10,16,4,3,3,2,4],backgroundColor:['#6366f1','#ef4444','#ec4899','#a78bfa','#22c55e','#eab308','#f97316','#94a3b8'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#e2e8f0',font:{size:9},padding:4}}}}});
+  new Chart(document.getElementById('donutReelshort'),{type:'doughnut',data:{labels:['Hidden ID/Billionaire','Werewolf/Fantasy','Pregnancy','YA/Campus','Family','Mafia','Second Chance','Other'],datasets:[{data:[18,14,10,8,8,6,6,5],backgroundColor:['#6366f1','#22c55e','#ec4899','#eab308','#f97316','#ef4444','#a78bfa','#94a3b8'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#e2e8f0',font:{size:9},padding:4}}}}});
+  new Chart(document.getElementById('donutGoodshort'),{type:'doughnut',data:{labels:['Family/Heiress','Mafia','Revenge','Werewolf/Toxic','Contract/Sweet'],datasets:[{data:[3,2,2,2,1],backgroundColor:['#eab308','#ef4444','#6366f1','#22c55e','#ec4899'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#e2e8f0',font:{size:9},padding:4}}}}});
+  // NetShort donut (from homepage analysis)
+  new Chart(document.getElementById('donutNetshort'),{type:'doughnut',data:{labels:['Revenge/Karma','Underdog Rise','Modern Romance','Fantasy/Historical','Family Drama','Werewolf','Mafia','Sci-Fi'],datasets:[{data:[12,8,7,6,4,3,3,2],backgroundColor:['#ef4444','#f97316','#ec4899','#a78bfa','#eab308','#22c55e','#6366f1','#06b6d4'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#e2e8f0',font:{size:9},padding:4}}}}});
+}
+function renderMainCharts(){
+  if(cr.m)return;cr.m=true;
+  new Chart(document.getElementById('netflixChart'),{type:'bar',data:{labels:['Man on Fire','Should I Marry...','Unchosen','Running Point S2','Hulk Hogan','Raw 2026','Running Point S1','Danny Go!','Salish & Jordan','Stranger Things'],datasets:[{data:[11,10.6,8.8,6.7,3.1,2.8,2.5,2.3,2.2,2.1],backgroundColor:'#f472b6',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v+'M'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
+  new Chart(document.getElementById('reelshortChart'),{type:'bar',data:{labels:['Married for Greencard','Bound by Vendetta','Ms. Swan','Curse of Dragon King','Fatal Attraction','We Will Love Again','I Got Married',"Alpha's Daughter",'Snatched a Billionaire','My Husband Killed Me'],datasets:[{data:[9.3,9.1,8.8,8.8,8.8,8.6,8.5,8.3,8.2,8.0],backgroundColor:'#34d399',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{min:7,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
+  new Chart(document.getElementById('goodshortChart'),{type:'bar',data:{labels:['Blood and Bones','Kidnapped by Mafia','Homeless Genius','Found My Daddy','Weeping Bones','Too Late My Alpha','Sorry Captain',"Lies Can't Stop",'Oops I Married','Princess in Captivity'],datasets:[{data:[33500,15200,3300,2300,1600,692,588,385,286,133],backgroundColor:'#eab308',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.x;return v>=1000?(v/1000).toFixed(1)+'M':v+'K'}}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v>=1000?(v/1000)+'M':v+'K'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:8}}}}}});
+  new Chart(document.getElementById('platformsChart'),{type:'doughnut',data:{labels:['DramaBox (3496)','ShortTV (2989)','ReelShort (2752)','GoodShort (1961)','SnackShort (920)','FlexTV (751)','Vigloo (399)'],datasets:[{data:[3496,2989,2752,1961,920,751,399],backgroundColor:['#6366f1','#818cf8','#a78bfa','#34d399','#eab308','#f97316','#ec4899'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:9},padding:5}}}}});
+  new Chart(document.getElementById('revenueChart'),{type:'bar',data:{labels:['ReelShort','DramaBox','NetShort','GoodShort','ShortMax','MyDrama','GammaTime'],datasets:[{label:'$M',data:[1200,323,227,220,200,50,14],backgroundColor:['#6366f1','#818cf8','#ef4444','#34d399','#eab308','#ec4899','#f97316'],borderRadius:4,barThickness:24}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'M'}}},scales:{x:{grid:{display:false},ticks:{color:'#e2e8f0'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>'$'+v+'M'}}}}});
+  // Amazon Kindle Top 20 chart
+  new Chart(document.getElementById('amazonChart'),{type:'bar',data:{labels:['Rites of the Starling','The Deal (Kennedy)','Twisted Pawn (Shen)','ACOTAR 6 (Maas)','ACOTAR 7 (Maas)','Lift Me Up','Shield of Sparrows','In Her Own League','Wake-Up Calls','Wrong Catch','Game On','The Ruler (Sky)','Last Letter (Yarros)','Sweet Oblivion','Mistakes Were Made','Wild Card','Night We Met','Poison Daughter','My Dreadful Darling','Captivation Creek'],datasets:[{label:'Rank',data:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(r=>21-r),backgroundColor:CC.concat(CC).slice(0,20),borderRadius:3,barThickness:12}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'#'+(21-c.parsed.x)+' Kindle Romance'}}},scales:{x:{display:false},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:8}}}}}});
+  // Goodreads
+  new Chart(document.getElementById('booksChart'),{type:'bar',data:{labels:['ACOTAR (Maas)','Fourth Wing','The Housemaid','It Ends with Us','Twisted Love','Verity','Love Hypothesis','Haunting Adeline','Fine Print','Den of Vipers'],datasets:[{data:[4.4,3.7,3.5,2.8,1.66,1.5,1.2,0.931,0.8,0.45],backgroundColor:'#a78bfa',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'M ratings'}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v+'M'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
+  // NetShort genre chart
+  new Chart(document.getElementById('netshortGenreChart'),{type:'bar',data:{labels:['Revenge/Karma','Underdog Rise','Modern Romance','Fantasy/Historical','Family Drama','Werewolf','Mafia','Sci-Fi/Action'],datasets:[{data:[12,8,7,6,4,3,3,2],backgroundColor:['#ef4444','#f97316','#ec4899','#a78bfa','#eab308','#22c55e','#6366f1','#06b6d4'],borderRadius:4,barThickness:20}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:10}}}}}});
+}
+
+// ===== CONTROLS =====
+let cF='all',cS='',cPP=false,cT='all';
+document.getElementById('marketFilter').addEventListener('change',e=>{cF=e.target.value;renderTrends(cF,cS,cPP,cT)});
+document.getElementById('tropeFilter').addEventListener('change',e=>{cT=e.target.value;renderTrends(cF,cS,cPP,cT)});
+document.getElementById('searchInput').addEventListener('input',e=>{cS=e.target.value;renderTrends(cF,cS,cPP,cT)});
+document.getElementById('prePeakToggle').addEventListener('click',e=>{cPP=!cPP;e.target.classList.toggle('active',cPP);renderTrends(cF,cS,cPP,cT)});
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='tropes'){renderHeatmap();renderTropeCharts()}
+    if(btn.dataset.tab==='competitors')renderCompDonuts();
+    if(btn.dataset.tab==='charts')renderMainCharts();
+    if(btn.dataset.tab==='pitch'){renderPitch();renderGap()}
+  });
+});
+// INIT
+renderTrends('all','',false,'all');
+renderComp();
+renderOpp();
+</script>
+</body>
+</html>
