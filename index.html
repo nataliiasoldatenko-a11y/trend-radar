@@ -132,7 +132,7 @@ table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
     <select id="tropeFilter"><option value="all">Всі тропи</option></select>
     <input type="text" id="searchInput" placeholder="Пошук...">
     <button class="toggle-btn" id="prePeakToggle">Pre-Peak</button>
-    <span class="timestamp">Оновлено: 29 травня 2026</span>
+    <span class="timestamp">Оновлено: 1 червня 2026</span>
   </div>
 </div>
 <div class="container">
@@ -142,6 +142,7 @@ table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
   <button class="tab-btn" data-tab="tropes">Тропи & Аналітика</button>
   <button class="tab-btn" data-tab="pitch">Що пітчити?</button>
   <button class="tab-btn" data-tab="charts">Графіки</button>
+  <button class="tab-btn" data-tab="changelog">Що змінилось</button>
 </div>
 <!-- TAB: OVERVIEW — grouped by tropes -->
 <div class="tab-content active" id="tab-overview">
@@ -154,7 +155,7 @@ table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
   <div class="comp-table-wrap"><table class="comp-table"><thead><tr><th>Платформа</th><th>Дохід</th><th>MAU</th><th>Каталог</th><th>Бюджет/серіал</th><th>Аудиторія</th><th>Ключові факти</th><th>Джерело</th></tr></thead><tbody id="compBody"></tbody></table></div>
   <h3 class="sub-title">Індустрія загалом</h3>
   <div class="cards-grid" id="industryCards"></div>
-  <h3 class="sub-title" style="margin-top:24px">Trending контент по платформах (травень 2026)</h3>
+  <h3 class="sub-title" style="margin-top:24px">Trending контент по платформах (червень 2026)</h3>
   <div class="ct-wrap" id="compTrending"></div>
   <h3 class="sub-title" style="margin-top:24px">Жанровий мікс конкурентів</h3>
   <div class="charts-row-3" id="compDonutRow">
@@ -189,7 +190,7 @@ table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
 <div class="tab-content" id="tab-charts">
   <h2 class="section-title"><span class="icon">&#x1F4C8;</span> Графіки & Дані</h2>
   <div class="charts-row">
-    <div class="chart-card"><h3>Netflix Global Top 10 — views/week (M)</h3><canvas id="netflixChart"></canvas></div>
+    <div class="chart-card"><h3>Netflix Global Top 10 — points (June 2026)</h3><canvas id="netflixChart"></canvas></div>
     <div class="chart-card"><h3>ReelShort Top 10 — IMDb</h3><canvas id="reelshortChart"></canvas></div>
   </div>
   <div class="charts-row">
@@ -204,6 +205,10 @@ table.gap-table{width:100%;border-collapse:collapse;font-size:.76rem}
     <div class="chart-card"><h3>Goodreads — ratings (M)</h3><canvas id="booksChart"></canvas></div>
     <div class="chart-card"><h3>NetShort Trending — жанри</h3><canvas id="netshortGenreChart"></canvas></div>
   </div>
+</div>
+<div class="tab-content" id="tab-changelog">
+  <h2 class="section-title"><span class="icon">&#x1F504;</span> Що змінилось з 29 травня</h2>
+  <div id="changelogContent"></div>
 </div>
 </div>
 <div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
@@ -261,15 +266,15 @@ const trends = [
   {id:'mdr2',title:'Revenge of XXL Wife',market:'vertical',phase:'rising',desc:'MDR trending. Body-positive revenge.',tags:['Revenge','Strong Female Lead'],source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',stats:'MDR trending'},
   {id:'mdr3',title:'Alpha Queen Rising',market:'vertical',phase:'rising',desc:'MDR trending. Werewolf + SFL.',tags:['Werewolf','Strong Female Lead'],source:'microdramaradar.com',sourceUrl:'https://microdramaradar.com',stats:'MDR trending'},
   // NETFLIX (netflix.com/tudum/top10)
-  {id:'nf1',title:'Man on Fire: Season 1',market:'streaming',phase:'peaking',desc:'#1 Netflix Global. 11M views/week.',tags:['Action','Thriller'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'11M views/week'},
-  {id:'nf2',title:'Should I Marry A Murderer?',market:'streaming',phase:'peaking',desc:'#2 Netflix Global. 10.6M views/week. True crime/thriller.',tags:['True Crime','Thriller','Romance'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'10.6M views/week'},
-  {id:'nf3',title:'Running Point: Season 2',market:'streaming',phase:'rising',desc:'#4 Netflix. 6.7M views/week. Sports drama.',tags:['Drama','Sports'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'6.7M views/week'},
-  {id:'nf4',title:'Bridgerton (new season)',market:'streaming',phase:'peaking',desc:'Netflix franchise. Romance/period.',tags:['Romance','Period Drama'],source:'netflix.com',sourceUrl:'https://www.netflix.com',stats:'Franchise hit'},
+  {id:'nf1',title:'The Boroughs (Duffer Brothers)',market:'streaming',phase:'peaking',desc:'#1 Netflix Global. 77 points. Duffer Brothers sci-fi thriller.',tags:['Sci-Fi','Thriller'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'77 points, #1 Netflix'},
+  {id:'nf2',title:'Worst Ex Ever',market:'streaming',phase:'peaking',desc:'#3 Netflix Global. 57 points. True crime documentary.',tags:['True Crime','Thriller'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'57 points, #3 Netflix'},
+  {id:'nf3',title:'Roast of Kevin Hart',market:'streaming',phase:'rising',desc:'#4 Netflix. 47 points. Comedy special.',tags:['Comedy'],source:'netflix.com/tudum/top10',sourceUrl:'https://www.netflix.com/tudum/top10/tv',stats:'47 points, #4 Netflix'},
+  {id:'nf4',title:'Office Romance (Netflix Original)',market:'streaming',phase:'emerging',desc:'Netflix Original rom-com. Competitive executives, enemies-to-lovers, forced proximity. Launching June 2026.',tags:['Romance','Enemies to Lovers','Comedy'],source:'netflix.com',sourceUrl:'https://www.netflix.com',stats:'New Netflix Original, June 2026'},
   {id:'nf5',title:'Heated Rivalry (HBO)',market:'streaming',phase:'emerging',desc:'HBO. Sports romance book adaptation.',tags:['Romance','Sports','Book Adaptation'],source:'hbo.com',sourceUrl:'https://www.hbo.com',stats:'Book-to-screen'},
   {id:'nf6',title:'A Knight of Seven Kingdoms (HBO)',market:'streaming',phase:'rising',desc:'HBO. GoT universe fantasy.',tags:['Fantasy','Period Drama'],source:'hbo.com',sourceUrl:'https://www.hbo.com',stats:'GoT franchise'},
   // CINEMA (boxofficemojo.com)
-  {id:'ci1',title:'Avatar: Fire and Ash',market:'cinema',phase:'peaking',desc:'#1 Box Office 2026.',tags:['Sci-Fi','Fantasy','Franchise'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#1 Box Office'},
-  {id:'ci2',title:'Wuthering Heights',market:'cinema',phase:'rising',desc:'#2 Box Office 2026. Literary adaptation.',tags:['Romance','Literary Adaptation','Period Drama'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#2 Box Office'},
+  {id:'ci1',title:'Super Mario Galaxy Movie',market:'cinema',phase:'peaking',desc:'#1 Box Office 2026. ~$991.8M worldwide, approaching $1B — first of 2026.',tags:['Fantasy','Franchise','Comedy'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'~$991.8M, #1 Box Office'},
+  {id:'ci2',title:'Michael (MJ Biopic)',market:'cinema',phase:'peaking',desc:'#2 Box Office 2026. $846M worldwide, 59.8% international.',tags:['Drama','Music'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'$846M, #2 Box Office'},
   {id:'ci3',title:'Project Hail Mary',market:'cinema',phase:'rising',desc:'#4 Box Office. Book adaptation.',tags:['Sci-Fi','Book Adaptation'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#4 Box Office'},
   {id:'ci4',title:'Devil Wears Prada 2',market:'cinema',phase:'rising',desc:'#7 Box Office.',tags:['Comedy','Drama','Fashion'],source:'boxofficemojo.com',sourceUrl:'https://www.boxofficemojo.com',stats:'#7 Box Office'},
   // BOOKS — GOODREADS
@@ -292,6 +297,11 @@ const trends = [
   {id:'az8',title:'My Dreadful Darling (H.D. Carlton)',market:'books',phase:'rising',desc:'#19 Amazon Kindle. NEW. Haunting Adeline author!',tags:['Dark Romance','Thriller'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#19 Kindle Romance (NEW)'},
   {id:'az9',title:'When the Moon Hatched (S.A. Parker)',market:'books',phase:'rising',desc:'Amazon Romantasy bestseller. Moonfall Series.',tags:['Romantasy'],source:'amazon.com/Best-Sellers-Romantasy',sourceUrl:'https://www.amazon.com/Best-Sellers-Romantasy-eBooks/zgbs/digital-text/158569011',stats:'Kindle Romantasy bestseller'},
   {id:'az10',title:'Game On (Navessa Allen)',market:'books',phase:'rising',desc:'#11 Amazon Kindle. NEW. Sports romance.',tags:['Romance','Sports'],source:'Amazon Kindle Top 100',sourceUrl:'https://blog.romancingthedata.com/p/amazon-kindle-store-romance-best-sellers-april-2026',stats:'#11 Kindle Romance (NEW)'},
+  // BOOKS — NEW JUNE 2026
+  {id:'bk9',title:'Onyx Storm (Rebecca Yarros)',market:'books',phase:'peaking',desc:'Still dominating Kindle bestsellers. Romantasy dragon-rider sequel.',tags:['Romantasy','Fantasy Romance','Dragons'],source:'amazon.com/kindle-bestsellers',sourceUrl:'https://www.amazon.com/Best-Sellers-Romantasy-eBooks/zgbs/digital-text/158569011',stats:'Kindle bestseller'},
+  {id:'bk10',title:'The Someday Garden (Ashley Poston)',market:'books',phase:'emerging',desc:'Magical summer romance, June 16 release. Love triangle.',tags:['Romance','Fantasy'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'June 16 release'},
+  {id:'bk11',title:'Father Material (Alexis Hall)',market:'books',phase:'emerging',desc:'Queer romance, single dad. June 2 release.',tags:['Romance','LGBTQ'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'June 2 release'},
+  {id:'bk12',title:'Fever Dream (Elsie Silver)',market:'books',phase:'rising',desc:'BookTok cowboy romance. May 2026 release.',tags:['Romance'],source:'goodreads.com',sourceUrl:'https://www.goodreads.com',stats:'BookTok trending'},
 ];
 
 const competitors = [
@@ -309,12 +319,16 @@ const industryFacts = [
   {title:'SAG-AFTRA ставки',value:'$250/день (лід)',detail:'$164/day support. Verticals Agreement.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/'},
   {title:'Маркетинг',value:'~90% бюджету',detail:'$20-30 per install.',source:'filmustage.com/blog',sourceUrl:'https://filmustage.com/blog/short-drama-platforms/'},
   {title:'NetShort зростання',value:'+171% QoQ (Q1 2025)',detail:'Найшвидше зростання серед топ-5.',source:'sensortower.com, insightrackr.com',sourceUrl:'https://blog.insightrackr.com/en/docs/Apr25TopShortDrama'},
+  {title:'Ринок мікродрам 2026',value:'$7.8B',detail:'Прогноз Deloitte — понад подвоєння YoY. Omdia: $3B поза Китаєм.',source:'deloitte.com',sourceUrl:'https://www.deloitte.com/us/en/insights/industry/technology/technology-media-and-telecom-predictions/2026/short-form-video-series.html'},
+  {title:'Глобальний ринок',value:'$8B+',detail:'Media Partners Asia. Рух до $26B до 2030.',source:'variety.com',sourceUrl:'https://variety.com/2025/tv/news/global-microdrama-boom-1236560947/'},
+  {title:'DramaBox Ads',value:'Programmatic',detail:'Квітень 2026 — перший short drama app з programmatic ad inventory через The Trade Desk.',source:'filmustage.com',sourceUrl:'https://filmustage.com/blog/short-drama-apps-compared-reelshort-vs-dramabox-in-2026/'},
 ];
 const compTrendingData = {
   'DramaBox':{source:'dramaboxdb.com, 3 pages',items:["Think Again! I'm the Hidden Boss Mom (Revenge, CEO)","Addicted to Your Kiss (Romance)","Fake Dating My Rich Nemesis (Fake Dating)","Watch Out, I'm The Lady Boss (Revenge, SFL)","Pucked by My Brother's Rival (EtL)","Queen Mom Rules (Family, CEO)","Dark Web of Desire (Toxic, Love Triangle)","Profit Prophecy (Fantasy, Underdog)","Ark on Time (Revenge, Rebirth)"]},
-  'ReelShort':{source:'reelshort.com homepage',items:["Bound by Love (Mafia) — New","Stableboy (YA, LGBTQ) — New","The Warlord Returns (Action) — New","You Divorced a Genius Heiress (Hidden Identity)","Baby Trapped by the Billionaire (Pregnancy)","The Pack's Doctor (Werewolf)","Shhh, Professor! (Age Gap, Forbidden)","The Genius and the Bad Boy (Interactive)"]},
-  'GoodShort':{source:'goodshort.com/Most-Trending',items:["Blood and Bones... (Family) — 33.5M views","Kidnapped by the Mafia — 15.2M views","Found A Homeless Genius (CEO) — 3.3M views","Found My Daddy... (Family) — 2.3M views","Weeping Bones (Heiress) — 1.6M views","Too Late, My Alpha (Werewolf) — 692K views"]},
-  'NetShort':{source:'netshort.com homepage, May 2026',items:["False Weakling, True Power (Revenge, Karma) — #1","Bankrupt My Cheating Husband (Romance, Karma) — #2","Cry For Losing Me (Female Empowerment) — #3","The Wolfless Carpenter (Underdog Rise) — #4","THE JANITOR: Rise of The Prime (Sci-Fi) — #5","The Lion's Captive (Fantasy Romance)","The Slap Queen (Romance, Revenge)","Caged by the Mafia Boss (Mafia)","A Werewolf Song of Fire and Frost (Werewolf)"]}
+  'ReelShort':{source:'reelshort.com homepage',items:["Bound by Love (Mafia) — New","Stableboy (YA, LGBTQ) — New","The Warlord Returns (Action) — New","You Divorced a Genius Heiress (Hidden Identity)","Baby Trapped by the Billionaire (Pregnancy)","The Pack's Doctor (Werewolf)","Shhh, Professor! (Age Gap, Forbidden)","The Genius and the Bad Boy (Interactive)","We Will Love Again (Second Chance)","Fated to My Forbidden Alpha (Werewolf)"]},
+  'GoodShort':{source:'goodshort.com/Most-Trending',items:["Blood and Bones... (Family) — 33.5M views","Kidnapped by the Mafia — 15.2M views","Found A Homeless Genius (CEO) — 3.3M views","Found My Daddy... (Family) — 2.3M views","Weeping Bones (Heiress) — 1.6M views","Too Late, My Alpha (Werewolf) — 692K views","Titan Era: Ten Divine Beasts Rise with Me (Fantasy, Transmigration)","Cousins by Name, Lovers in Secret (Forbidden, Taboo)"]},
+  'NetShort':{source:'netshort.com homepage, June 2026',items:["False Weakling, True Power (Revenge, Karma) — #1","Bankrupt My Cheating Husband (Romance, Karma) — #2","Cry For Losing Me (Female Empowerment) — #3","The Wolfless Carpenter (Underdog Rise) — #4","THE JANITOR: Rise of The Prime (Sci-Fi) — #5","The Lion's Captive (Fantasy Romance)","The Slap Queen (Romance, Revenge)","Caged by the Mafia Boss (Mafia)","A Werewolf Song of Fire and Frost (Werewolf)","Hidden Wolf King: A Hybrid Loser (Werewolf, Hidden Identity)","Tame the Devils or Die (Fantasy, Revenge)"]},
+  'ShortMax':{source:'shortmax.com trending',items:["Forbidden Desires: Alpha's Love (Werewolf, Taboo)","99 Heartbreaks: The Mate You Ignored (Werewolf, Rejection)","Return of the Lady CEO (Female Empowerment)"]}
 };
 
 const tropeHeatmap = [
@@ -535,7 +549,20 @@ const A={
   az7:{why:'#13 Kindle. Rebecca Yarros — author of Fourth Wing (3.7M ratings). Her backlist benefits from romantasy fame.',action:'Yarros halo effect: her romance backlist sells because of Fourth Wing fame. Same audience.',about:'Romance від Rebecca Yarros. Non-fantasy title.',pop:'Author brand power. Fourth Wing readers buying everything she writes.'},
   az8:{why:'#19 Kindle, NEW. H.D. Carlton — автор Haunting Adeline (931K). НОВИЙ реліз одразу у Top 20.',action:'H.D. Carlton\'s new release = event. Her audience is massive, loyal, and hungry for dark romance vertical series.',about:'Dark romance. H.D. Carlton. Follow-up to Haunting Adeline universe.',pop:'931K readers waiting for each new Carlton release. Automatic bestseller.'},
   az9:{why:'Amazon Romantasy bestseller. When the Moon Hatched — Moonfall Series. Growing romantasy catalogue.',action:'Romantasy catalogue expanding = genre maturity. More readers, more content, more cross-format potential.',about:'Romantasy. Sarah A. Parker. Moonfall Series.',pop:'New romantasy series succeeding = genre is expanding, not just Maas/Yarros.'},
-  az10:{why:'#11 Kindle, NEW. Sports romance. Navessa Allen.',action:'Ще один sports romance у Top 20. Тренд підтверджено many times over.',about:'Sports romance.',pop:'Genre depth: multiple new authors succeeding.'}
+  az10:{why:'#11 Kindle, NEW. Sports romance. Navessa Allen.',action:'Ще один sports romance у Top 20. Тренд підтверджено many times over.',about:'Sports romance.',pop:'Genre depth: multiple new authors succeeding.'},
+  // NEW NETFLIX
+  nf1:{why:'#1 Netflix Global з 77 points. Duffer Brothers (Stranger Things creators) sci-fi thriller — потужний franchise play.',action:'Sci-fi thriller від Duffer Brothers валідує: premium sci-fi content має масовий попит. Для вертикалів — адаптувати thriller/mystery елементи.',about:'Sci-fi thriller від творців Stranger Things. Новий оригінальний IP.',pop:'Duffer Brothers brand = automatic viewership. Sci-fi thriller залишається домінантним жанром streaming.'},
+  nf2:{why:'#3 Netflix з 57 points. True crime documentary тримається у Top 5 — жанр стабільно popular.',action:'True crime — growing жанр з proven demand. Вертикальні серіали досі не мають thriller/true crime контенту.',about:'True crime documentary серіал про найгірших колишніх.',pop:'True crime — один з найбільш addictive жанрів. Podcasts + streaming + books — triple validation.'},
+  nf3:{why:'#4 Netflix з 47 points. Comedy special — доводить що comedy content має streaming appeal.',action:'Comedy спеціали не для вертикалів, але comedy elements у romance/drama — валідований підхід.',about:'Comedy roast special.',pop:'Comedy content генерує social media buzz і word-of-mouth.'},
+  nf4:{why:'Netflix Original enemies-to-lovers rom-com у корпоративному сетингу. Office romance — трope з cross-market validation.',action:'ВАЖЛИВО: Netflix інвестує в enemies-to-lovers office romance. Це ВАЛІДАЦІЯ тропу на найвищому рівні. Forced proximity + competitive dynamic = addictive formula для вертикалів.',about:'Rom-com про конкуруючих топ-менеджерів, які змушені працювати разом. Enemies-to-lovers, forced proximity.',pop:'Office romance — troп, який резонує з working women 25-35. Netflix launch = mainstream validation.'},
+  // NEW CINEMA
+  ci1:{why:'#1 Box Office 2026 з ~$991.8M — наближається до $1B, перший фільм 2026 року що досягне цієї позначки. Franchise power.',action:'Gaming IP adaptations — зростаючий тренд. Mario franchise доводить масовий cross-demographic appeal.',about:'Анімаційний фільм за мотивами Nintendo Super Mario Galaxy. Сіквел хіту 2023 року.',pop:'Gaming + animation = family-friendly blockbuster. Cross-demographic appeal від дітей до nostalgia-driven дорослих.'},
+  ci2:{why:'#2 Box Office з $846M, 59.8% міжнародні ринки. Biopic формат доводить global appeal.',action:'Biopic/music — не для вертикалів безпосередньо, але celebrity-driven content має валідований попит.',about:'Біографічний фільм про Майкла Джексона. $846M worldwide.',pop:'Music biopics (Bohemian Rhapsody, Elvis, Michael) — proven box office formula. 59.8% international = global story.'},
+  // NEW BOOKS
+  bk9:{why:'Rebecca Yarros продовжує домінувати. Onyx Storm — третя книга Fourth Wing series (3.7M ratings). Romantasy лишається #1 book жанром.',action:'ПІДТВЕРДЖУЄ romantasy тренд. Yarros franchise = ongoing cultural moment. MyDrama ПОТРЕБУЄ romantasy контент.',about:'Третя книга серії Fourth Wing. Dragon-rider romantasy. Rebecca Yarros.',pop:'Fourth Wing readers — одна з найлояльніших аудиторій. Кожен новий реліз — cultural event.'},
+  bk10:{why:'Ashley Poston — magical romance, June 16 release. Love triangle + summer setting = seasonal content.',action:'Magical romance — light romantasy для ширшої аудиторії. Summer release = marketing opportunity.',about:'Magical summer romance з love triangle. Ashley Poston.',pop:'Summer romance releases capitalize on seasonal reading habits.'},
+  bk11:{why:'Queer romance від Alexis Hall (автор Boyfriend Material). Single dad trope — growing niche.',action:'LGBTQ romance — growing niche з loyal audience. ReelShort вже тестує (Stableboy). Варто спостерігати.',about:'Queer single dad romance. Alexis Hall.',pop:'Queer romance mainstreaming continues. Hall — recognized name у жанрі.'},
+  bk12:{why:'Elsie Silver — BookTok cowboy romance queen. Fever Dream — latest release, May 2026.',action:'Cowboy/western romance — niche але з dedicated BookTok fanbase. Potential for vertical adaptation.',about:'Cowboy romance. Elsie Silver. BookTok trending.',pop:'BookTok algorithm amplifies romance sub-niches. Cowboy romance = specific aesthetic that translates well to visual medium.'}
 };
 
 // ===== MODALS (RICH) =====
@@ -587,7 +614,7 @@ function renderCompDonuts(){
 }
 function renderMainCharts(){
   if(cr.m)return;cr.m=true;
-  new Chart(document.getElementById('netflixChart'),{type:'bar',data:{labels:['Man on Fire','Should I Marry...','Unchosen','Running Point S2','Hulk Hogan','Raw 2026','Running Point S1','Danny Go!','Salish & Jordan','Stranger Things'],datasets:[{data:[11,10.6,8.8,6.7,3.1,2.8,2.5,2.3,2.2,2.1],backgroundColor:'#f472b6',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v+'M'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
+  new Chart(document.getElementById('netflixChart'),{type:'bar',data:{labels:['The Boroughs','Worst Ex Ever','Roast of Kevin Hart','Ladies First','Sonic 2','Gabby\'s Dollhouse'],datasets:[{data:[77,57,47,54,30,25],backgroundColor:'#f472b6',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v+' pts'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
   new Chart(document.getElementById('reelshortChart'),{type:'bar',data:{labels:['Married for Greencard','Bound by Vendetta','Ms. Swan','Curse of Dragon King','Fatal Attraction','We Will Love Again','I Got Married',"Alpha's Daughter",'Snatched a Billionaire','My Husband Killed Me'],datasets:[{data:[9.3,9.1,8.8,8.8,8.8,8.6,8.5,8.3,8.2,8.0],backgroundColor:'#34d399',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{min:7,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
   new Chart(document.getElementById('goodshortChart'),{type:'bar',data:{labels:['Blood and Bones','Kidnapped by Mafia','Homeless Genius','Found My Daddy','Weeping Bones','Too Late My Alpha','Sorry Captain',"Lies Can't Stop",'Oops I Married','Princess in Captivity'],datasets:[{data:[33500,15200,3300,2300,1600,692,588,385,286,133],backgroundColor:'#eab308',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.x;return v>=1000?(v/1000).toFixed(1)+'M':v+'K'}}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v>=1000?(v/1000)+'M':v+'K'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:8}}}}}});
   new Chart(document.getElementById('platformsChart'),{type:'doughnut',data:{labels:['DramaBox (3496)','ShortTV (2989)','ReelShort (2752)','GoodShort (1961)','SnackShort (920)','FlexTV (751)','Vigloo (399)'],datasets:[{data:[3496,2989,2752,1961,920,751,399],backgroundColor:['#6366f1','#818cf8','#a78bfa','#34d399','#eab308','#f97316','#ec4899'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:9},padding:5}}}}});
@@ -598,6 +625,58 @@ function renderMainCharts(){
   new Chart(document.getElementById('booksChart'),{type:'bar',data:{labels:['ACOTAR (Maas)','Fourth Wing','The Housemaid','It Ends with Us','Twisted Love','Verity','Love Hypothesis','Haunting Adeline','Fine Print','Den of Vipers'],datasets:[{data:[4.4,3.7,3.5,2.8,1.66,1.5,1.2,0.931,0.8,0.45],backgroundColor:'#a78bfa',borderRadius:4,barThickness:14}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'M ratings'}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8',callback:v=>v+'M'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:9}}}}}});
   // NetShort genre chart
   new Chart(document.getElementById('netshortGenreChart'),{type:'bar',data:{labels:['Revenge/Karma','Underdog Rise','Modern Romance','Fantasy/Historical','Family Drama','Werewolf','Mafia','Sci-Fi/Action'],datasets:[{data:[12,8,7,6,4,3,3,2],backgroundColor:['#ef4444','#f97316','#ec4899','#a78bfa','#eab308','#22c55e','#6366f1','#06b6d4'],borderRadius:4,barThickness:20}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e2e8f0',font:{size:10}}}}}});
+}
+
+// ===== CHANGELOG =====
+const changelog = [
+  {category:'Netflix',changes:[
+    {type:'new',text:'The Boroughs (Duffer Brothers) — #1 з 77 points, змістив Nemesis'},
+    {type:'new',text:'Office Romance — новий Netflix Original, enemies-to-lovers у корпоративному сетингу'},
+    {type:'removed',text:'Man on Fire більше не #1 (замінений The Boroughs)'},
+    {type:'changed',text:'Worst Ex Ever тримається #3 (57 points), Roast of Kevin Hart #4 (47 points)'}
+  ]},
+  {category:'Box Office',changes:[
+    {type:'new',text:'Super Mario Galaxy Movie ~$991.8M — наближається до $1B, перший фільм 2026 року'},
+    {type:'new',text:'Michael (MJ біопік) — $846M worldwide, 59.8% міжнародні ринки'},
+    {type:'removed',text:'Avatar: Fire and Ash більше не #1 (змінений Super Mario Galaxy)'}
+  ]},
+  {category:'Books/Kindle',changes:[
+    {type:'new',text:'Onyx Storm (Rebecca Yarros) — тримається у Kindle bestsellers, romantasy'},
+    {type:'new',text:'The Someday Garden (Ashley Poston) — magical romance, June 16'},
+    {type:'new',text:'Father Material (Alexis Hall) — queer single dad romance, June 2'},
+    {type:'new',text:'Fever Dream (Elsie Silver) — BookTok cowboy romance, вийшов у травні'},
+    {type:'stable',text:'ACOTAR, Fourth Wing, Haunting Adeline — стабільно тримаються'}
+  ]},
+  {category:'Конкуренти',changes:[
+    {type:'new',text:'ShortMax додано як окрему платформу у trending tracker'},
+    {type:'changed',text:'GoodShort: нові trending — Titan Era (fantasy/transmigration), Cousins by Name (forbidden)'},
+    {type:'changed',text:'NetShort: нові trending — Hidden Wolf King, Tame the Devils'},
+    {type:'stable',text:'ReelShort: Double Life of Billionaire Husband досі smash hit'}
+  ]},
+  {category:'Індустрія',changes:[
+    {type:'new',text:'Deloitte прогноз: ринок мікродрам $7.8B у 2026 (>2x YoY)'},
+    {type:'new',text:'Media Partners Asia: глобальний ринок перевищив $8B, курс на $26B до 2030'},
+    {type:'new',text:'DramaBox запустив programmatic ads через The Trade Desk (квітень 2026)'},
+    {type:'new',text:'Omdia: ринок мікродрам поза Китаєм — $3B у 2026'}
+  ]},
+  {category:'Тропи',changes:[
+    {type:'rising',text:'Office Romance / Enemies-to-Lovers у корпоративному сетингу — валідація Netflix'},
+    {type:'rising',text:'Revenge/Rebirth (disowned daughter) — зростає на GoodShort, ShortMax'},
+    {type:'stable',text:'Werewolf/Alpha — досі домінує, але сигнали сатурації'},
+    {type:'declining',text:'Billionaire Romance — momentum score -1.6 у trend_data (declining)'}
+  ]}
+];
+function renderChangelog(){
+  const colors={new:'#22c55e',changed:'#6366f1',stable:'#eab308',removed:'#ef4444',declining:'#ef4444',rising:'#a855f7'};
+  const icons={new:'\u{1F7E2}',changed:'\u{1F535}',stable:'\u{1F7E1}',removed:'\u{1F534}',declining:'\u{1F534}',rising:'\u{1F7E3}'};
+  document.getElementById('changelogContent').innerHTML=changelog.map(c=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+      <h3 style="font-size:.95rem;font-weight:700;margin-bottom:10px;color:var(--accent2)">${c.category}</h3>
+      ${c.changes.map(ch=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(45,45,74,.3)">
+        <span style="flex-shrink:0">${icons[ch.type]||'\u{1F535}'}</span>
+        <span style="font-size:.82rem;color:var(--text-dim)">${ch.text}</span>
+      </div>`).join('')}
+    </div>`).join('');
 }
 
 // ===== CONTROLS =====
@@ -622,6 +701,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 renderTrends('all','',false,'all');
 renderComp();
 renderOpp();
+renderChangelog();
 </script>
 </body>
 </html>
